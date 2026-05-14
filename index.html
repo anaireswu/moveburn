@@ -1,0 +1,2520 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Move Burn — Calculadora de Gasto Calórico</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0a0a0f;
+    --surface: #111118;
+    --card: #16161f;
+    --border: #222230;
+    --accent: #ff4d00;
+    --accent2: #ff9500;
+    --text: #f0f0f0;
+    --muted: #888898;
+    --green: #00e87a;
+    --red: #ff3355;
+    --blue: #3b9eff;
+    --purple: #a855f7;
+    --panel-bg: rgba(17,17,24,0.82);
+    --panel-bg-soft: rgba(17,17,24,0.62);
+    --soft-bg: rgba(255,255,255,0.035);
+    --soft-bg-2: rgba(255,255,255,0.018);
+    --soft-border: rgba(255,255,255,0.07);
+    --panel-shadow: 0 18px 55px rgba(0,0,0,0.22);
+    --option-bg: #1a1a28;
+    --page-glow-a: rgba(255,77,0,0.09);
+    --page-glow-b: rgba(255,149,0,0.06);
+  }
+
+  body.theme-light {
+    color-scheme: light;
+    --bg: #f7f4ef;
+    --surface: #ffffff;
+    --card: #ffffff;
+    --border: #ded6ce;
+    --text: #18141c;
+    --muted: #6f6672;
+    --green: #008a50;
+    --red: #d82d47;
+    --blue: #176ed6;
+    --purple: #8135c8;
+    --panel-bg: rgba(255,255,255,0.94);
+    --panel-bg-soft: rgba(255,255,255,0.78);
+    --soft-bg: rgba(255,255,255,0.72);
+    --soft-bg-2: rgba(255,77,0,0.035);
+    --soft-border: rgba(24,20,28,0.10);
+    --panel-shadow: 0 18px 45px rgba(84,55,32,0.10);
+    --option-bg: #ffffff;
+    --page-glow-a: rgba(255,77,0,0.11);
+    --page-glow-b: rgba(255,149,0,0.12);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    transition: background 0.22s ease, color 0.22s ease;
+  }
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(ellipse 70% 50% at 5% 15%, var(--page-glow-a) 0%, transparent 55%),
+      radial-gradient(ellipse 50% 60% at 95% 85%, var(--page-glow-b) 0%, transparent 55%);
+    pointer-events: none; z-index: 0;
+  }
+  .wrapper {
+    position: relative; z-index: 1;
+    max-width: 1180px; margin: 0 auto;
+    padding: 18px 20px 28px;
+  }
+
+  .app-topbar {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 18px;
+    margin-bottom: 16px;
+  }
+
+  header {
+    text-align: left;
+    margin: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(28px, 3vw, 38px);
+    letter-spacing: 2.4px;
+    background: linear-gradient(135deg, #ff4d00 30%, #ff9500);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 0.95;
+    margin: 0;
+    white-space: nowrap;
+  }
+  .tagline {
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 1.15px;
+    text-transform: uppercase;
+    font-weight: 600;
+    line-height: 1.35;
+    max-width: 230px;
+    padding-top: 3px;
+  }
+  .science-badge {
+    display: none;
+  }
+  .science-badge::before { content: '⚗️'; font-size: 13px; }
+
+  .theme-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 0;
+    flex-shrink: 0;
+  }
+
+  .example-wrap {
+    position: relative;
+  }
+
+  .example-button {
+    height: 42px;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    color: var(--text);
+    border-radius: 999px;
+    padding: 0 15px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: var(--panel-shadow);
+    position: relative;
+    transition: transform 0.16s, border-color 0.16s, background 0.16s, color 0.16s, box-shadow 0.16s;
+  }
+
+  .example-button:hover,
+  .example-button:focus-visible {
+    transform: translateY(-1px);
+    border-color: rgba(255,77,0,0.42);
+    color: var(--accent);
+    outline: none;
+  }
+
+  .example-button::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    width: 238px;
+    padding: 9px 11px;
+    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    box-shadow: 0 14px 30px rgba(0,0,0,0.24);
+    color: var(--text);
+    font-size: 11px;
+    line-height: 1.35;
+    letter-spacing: 0;
+    text-transform: none;
+    font-weight: 600;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-4px);
+    transition: opacity 0.16s ease, transform 0.16s ease;
+    z-index: 35;
+  }
+
+  .example-button:hover::after,
+  .example-button:focus-visible::after {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .example-popover {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 12px);
+    width: min(365px, calc(100vw - 28px));
+    padding: 16px;
+    border-radius: 18px;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    box-shadow: 0 20px 55px rgba(0,0,0,0.28);
+    z-index: 30;
+  }
+
+  .example-popover.show {
+    display: block;
+    animation: exampleIn 0.16s ease both;
+  }
+
+  @keyframes exampleIn {
+    from { opacity: 0; transform: translateY(-6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .example-popover-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+  }
+
+  .example-popover h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 23px;
+    letter-spacing: 1.6px;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .example-popover p {
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+
+  .example-close {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--soft-bg);
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    transition: color 0.16s, border-color 0.16s, transform 0.16s;
+  }
+
+  .example-close:hover {
+    color: var(--accent);
+    border-color: rgba(255,77,0,0.42);
+    transform: rotate(8deg);
+  }
+
+  .example-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin: 12px 0 10px;
+  }
+
+  .example-item {
+    border: 1px solid var(--soft-border);
+    background: var(--soft-bg-2);
+    border-radius: 13px;
+    padding: 10px 11px;
+  }
+
+  .example-item span {
+    display: block;
+    color: var(--muted);
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+
+  .example-item strong {
+    display: block;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .example-note {
+    padding-top: 8px;
+    border-top: 1px solid var(--soft-border);
+  }
+  .theme-toggle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    box-shadow: var(--panel-shadow);
+    display: grid;
+    place-items: center;
+    position: relative;
+    cursor: pointer;
+    padding: 0;
+    transition: transform 0.16s, border-color 0.16s, background 0.16s, box-shadow 0.16s;
+  }
+  .theme-toggle:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255,77,0,0.38);
+    box-shadow: 0 14px 32px rgba(0,0,0,0.16);
+  }
+  .theme-toggle:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255,77,0,0.16);
+    border-color: rgba(255,77,0,0.45);
+  }
+  .theme-toggle__icon {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: #ef7b9a;
+    stroke-width: 1.9;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: opacity 0.22s ease, transform 0.22s ease;
+  }
+  .theme-toggle__icon--sun {
+    opacity: 0;
+    transform: scale(0.8) rotate(-20deg);
+  }
+  .theme-toggle__icon--moon {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  body.theme-light .theme-toggle__icon--sun {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  body.theme-light .theme-toggle__icon--moon {
+    opacity: 0;
+    transform: scale(0.8) rotate(20deg);
+  }
+
+  .section-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 17px; letter-spacing: 3px; color: var(--accent);
+    text-transform: uppercase; margin: 28px 0 14px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-label::after { content: ''; flex: 1; height: 1px; background: linear-gradient(90deg, var(--border), transparent); }
+
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .span2 { grid-column: span 2; }
+  .span3 { grid-column: span 3; }
+  .grid3 { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 580px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .span2, .span3 { grid-column: span 1; }
+    .grid3 { grid-template-columns: 1fr; }
+  }
+
+  .field { display: flex; flex-direction: column; gap: 7px; }
+  label { font-size: 10.5px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  label .req { color: var(--accent); margin-left: 2px; }
+  .hint { font-size: 11px; color: var(--muted); opacity: 0.65; line-height: 1.5; }
+
+  input, select {
+    background: var(--card); border: 1px solid var(--border);
+    color: var(--text); border-radius: 10px;
+    padding: 13px 15px; font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    outline: none; width: 100%;
+    appearance: none; -webkit-appearance: none;
+    transition: border-color 0.18s, box-shadow 0.18s;
+  }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888898' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 13px center;
+    padding-right: 42px; cursor: pointer;
+  }
+  select option { background: var(--option-bg); color: var(--text); }
+  input:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(255,77,0,0.13); }
+  input::placeholder { color: var(--muted); opacity: 0.45; }
+  input:disabled { opacity: 0.38; cursor: not-allowed; }
+
+  .field.missing-field label {
+    color: var(--red);
+  }
+
+  .field.missing-field input,
+  .field.missing-field select,
+  .field.missing-field .exercise-toggle {
+    border-color: rgba(255,51,85,0.75);
+    box-shadow: 0 0 0 3px rgba(255,51,85,0.12);
+  }
+
+  .field.missing-field .hint {
+    color: var(--red);
+    opacity: 0.85;
+  }
+
+  .shake-field {
+    animation: fieldShake 0.42s ease-in-out;
+  }
+
+  @keyframes fieldShake {
+    0%, 100% { transform: translateX(0); }
+    15%, 45%, 75% { transform: translateX(-7px); }
+    30%, 60%, 90% { transform: translateX(7px); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .shake-field { animation: none; }
+  }
+
+
+  .exercise-toggle {
+    width: 100%;
+    margin: 2px 0 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: linear-gradient(135deg, rgba(255,77,0,0.08), rgba(255,149,0,0.035));
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: border-color 0.16s, background 0.16s, transform 0.16s;
+  }
+
+  .exercise-toggle:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255,77,0,0.42);
+    background: linear-gradient(135deg, rgba(255,77,0,0.12), rgba(255,149,0,0.06));
+  }
+
+  .exercise-toggle-icon {
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    display: grid;
+    place-items: center;
+    background: rgba(255,77,0,0.12);
+    color: var(--accent);
+    flex: 0 0 auto;
+    transition: transform 0.18s ease;
+  }
+
+  .exercise-toggle.open .exercise-toggle-icon {
+    transform: rotate(180deg);
+  }
+
+  .exercise-picker {
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--card);
+  }
+
+  .exercise-picker[hidden] {
+    display: none;
+  }
+
+  .search-wrap { position: relative; }
+
+  .exercise-search-row {
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.015);
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted);
+    font-size: 14px;
+    pointer-events: none;
+    opacity: 0.75;
+  }
+
+  #exercise-search {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    padding-left: 42px;
+  }
+
+  #exercise-search:focus {
+    box-shadow: none;
+  }
+
+  .exercise-native {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .exercise-list {
+    display: grid;
+    max-height: 360px;
+    overflow-y: auto;
+    padding: 8px;
+  }
+
+  .exercise-group {
+    display: grid;
+    gap: 8px;
+    padding: 10px 0 12px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+  }
+
+  .exercise-group:first-child {
+    border-top: 0;
+    padding-top: 0;
+  }
+
+  .exercise-group.hidden {
+    display: none;
+  }
+
+  .exercise-group-title {
+    padding: 0 5px;
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .exercise-options {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .exercise-option {
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.018);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.18s, background 0.18s, transform 0.18s;
+  }
+
+  .exercise-option:hover {
+    border-color: rgba(255,77,0,0.5);
+    background: rgba(255,77,0,0.08);
+  }
+
+  .exercise-option.active {
+    border-color: var(--accent);
+    background: rgba(255,77,0,0.16);
+    color: var(--accent);
+  }
+
+  .exercise-option.hidden {
+    display: none;
+  }
+
+  .exercise-empty {
+    display: none;
+    margin: 0 8px 8px;
+    padding: 11px 13px;
+    border: 1px solid rgba(255,51,85,0.24);
+    border-radius: 10px;
+    background: rgba(255,51,85,0.07);
+    color: var(--red);
+    font-size: 12px;
+  }
+
+  .exercise-empty.show {
+    display: block;
+  }
+
+  @media (max-width: 580px) {
+    .exercise-options { grid-template-columns: 1fr; }
+    .exercise-list { max-height: 300px; }
+  }
+
+  .sex-toggle { display: flex; gap: 8px; }
+  .sex-btn {
+    flex: 1; padding: 13px; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--card);
+    color: var(--muted); font-family: 'DM Sans', sans-serif;
+    font-size: 13.5px; font-weight: 500; cursor: pointer;
+    transition: all 0.18s; text-align: center;
+  }
+  .sex-btn.active { background: rgba(255,77,0,0.14); border-color: var(--accent); color: var(--accent); }
+
+  .cond-field { display: none; }
+  .cond-field.show { display: flex; flex-direction: column; gap: 7px; }
+
+  .bf-toggle-row { display: flex; align-items: center; gap: 10px; }
+  .toggle-switch { position: relative; width: 40px; height: 22px; cursor: pointer; flex-shrink: 0; }
+  .toggle-switch input { opacity: 0; width: 0; height: 0; }
+  .toggle-track { position: absolute; inset: 0; background: var(--border); border-radius: 99px; transition: 0.2s; }
+  .toggle-switch input:checked + .toggle-track { background: var(--accent); }
+  .toggle-knob { position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: 0.2s; }
+  .toggle-switch input:checked ~ .toggle-knob { left: 21px; }
+  .bf-toggle-row .toggle-label { text-transform: none; letter-spacing: 0; font-size: 13px; color: var(--text); cursor: pointer; }
+
+  /* Resistance training panel */
+  .resistance-panel {
+    background: rgba(168,85,247,0.06);
+    border: 1px solid rgba(168,85,247,0.25);
+    border-radius: 14px; padding: 18px 20px; margin-top: 4px;
+    display: none;
+  }
+  .resistance-panel.show { display: block; }
+  .resistance-panel .rp-title {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--purple); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .resistance-panel .rp-title::before { content: '💡'; }
+  .rp-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  @media (max-width: 580px) { .rp-grid { grid-template-columns: 1fr 1fr; } }
+  .rp-hint { font-size: 11px; color: var(--muted); opacity: 0.7; margin-top: 10px; line-height: 1.5; }
+
+  /* Cardio panel */
+  .cardio-panel {
+    background: rgba(0,232,122,0.04);
+    border: 1px solid rgba(0,232,122,0.18);
+    border-radius: 14px; padding: 18px 20px; margin-top: 4px;
+    display: none;
+  }
+  .cardio-panel.show { display: block; }
+  .cardio-panel .cp-title {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--green); margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .cardio-panel .cp-title::before { content: '📊'; }
+
+  .error-msg {
+    background: rgba(255,51,85,0.1); border: 1px solid rgba(255,51,85,0.3);
+    border-radius: 10px; color: var(--red); padding: 11px 15px;
+    font-size: 13px; margin-top: 10px; display: none;
+  }
+  .error-msg.show { display: block; }
+
+  .calc-btn {
+    width: 100%; padding: 17px; border-radius: 12px; border: none;
+    background: linear-gradient(135deg, #ff4d00, #ff9500);
+    color: #fff; font-family: 'Bebas Neue', sans-serif;
+    font-size: 21px; letter-spacing: 4px; cursor: pointer;
+    transition: transform 0.14s, box-shadow 0.14s;
+    margin-top: 10px; position: relative; overflow: hidden;
+  }
+  .calc-btn::after { content: ''; position: absolute; inset: 0; background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent); opacity: 0; transition: opacity 0.18s; }
+  .calc-btn:hover { transform: translateY(-2px); box-shadow: 0 14px 40px rgba(255,77,0,0.38); }
+  .calc-btn:hover::after { opacity: 1; }
+  .calc-btn:active { transform: translateY(0); }
+
+  #result {
+    display: none;
+    margin-top: 18px;
+    opacity: 0;
+    transform: translateY(12px);
+    transition: opacity 0.28s ease, transform 0.28s ease;
+  }
+  #result.show {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .result-card { background: var(--card); border: 1px solid var(--border); border-radius: 18px; overflow: hidden; }
+  .result-header {
+    background: linear-gradient(135deg, rgba(255,77,0,0.18), rgba(255,149,0,0.08));
+    border-bottom: 1px solid var(--border); padding: 22px 26px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .res-icon { font-size: 38px; line-height: 1; }
+  .res-name { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 2px; }
+  .res-sub { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
+  .result-body { padding: 26px; }
+
+  .cal-hero {
+    text-align: center; padding: 22px 16px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; margin-bottom: 18px;
+  }
+  .cal-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(68px, 13vw, 108px);
+    background: linear-gradient(135deg, #ff4d00, #ff9500);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text; line-height: 1;
+  }
+  .cal-unit { font-size: 13px; color: var(--muted); letter-spacing: 3px; text-transform: uppercase; margin-top: 3px; }
+  .cal-range { font-size: 12px; color: var(--muted); margin-top: 6px; font-style: italic; }
+
+  /* Breakdown bar */
+  .breakdown-section { margin-bottom: 16px; }
+  .breakdown-title { font-size: 10.5px; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+  .breakdown-bar { display: flex; height: 10px; border-radius: 99px; overflow: hidden; gap: 2px; margin-bottom: 8px; }
+  .bb-seg { height: 100%; border-radius: 99px; transition: width 0.9s cubic-bezier(0.34,1.56,0.64,1); }
+  .bb-seg.activity { background: linear-gradient(90deg, #ff4d00, #ff9500); }
+  .bb-seg.epoc { background: var(--purple); }
+  .bb-seg.bmr-rest { background: var(--blue); opacity: 0.45; }
+  .breakdown-legend { display: flex; gap: 18px; flex-wrap: wrap; }
+  .bl-item { display: flex; align-items: center; gap: 6px; font-size: 11px; color: var(--muted); }
+  .bl-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .bl-dot.activity { background: #ff9500; }
+  .bl-dot.epoc { background: var(--purple); }
+  .bl-dot.bmr-rest { background: var(--blue); opacity: 0.5; }
+
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 14px; }
+  .stat-box { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 13px 15px; }
+  .stat-lbl { font-size: 10px; font-weight: 600; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; margin-bottom: 4px; }
+  .stat-val { font-family: 'JetBrains Mono', monospace; font-size: 19px; font-weight: 600; color: var(--text); }
+  .stat-val.orange { color: var(--accent2); }
+  .stat-val.green { color: var(--green); }
+  .stat-val.blue { color: var(--blue); }
+  .stat-val.purple { color: var(--purple); }
+
+  .intensity-bar { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 13px 15px; margin-bottom: 12px; }
+  .int-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 11.5px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+  .int-name { color: var(--text); font-size: 13px; }
+  .bar-track { height: 7px; background: var(--border); border-radius: 99px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #ff4d00, #ff9500); transition: width 0.9s cubic-bezier(0.34, 1.56, 0.64, 1); width: 0; }
+
+  .method-box {
+    background: rgba(59,158,255,0.06); border: 1px solid rgba(59,158,255,0.2);
+    border-radius: 10px; padding: 13px 15px; margin-bottom: 12px;
+    font-size: 12px; color: var(--muted); line-height: 1.7;
+  }
+  .method-box strong { color: var(--blue); }
+  .disclaimer { font-size: 11.5px; color: var(--muted); text-align: center; line-height: 1.65; }
+
+  /* Organização do formulário */
+  .intro-panel {
+    background: linear-gradient(135deg, rgba(255,77,0,0.10), rgba(255,149,0,0.035));
+    border: 1px solid rgba(255,77,0,0.22);
+    border-radius: 20px;
+    padding: 20px;
+    margin: -22px 0 24px;
+  }
+  .intro-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 2px;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .intro-copy {
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.65;
+    max-width: 760px;
+  }
+  .intro-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 16px;
+  }
+  .intro-pill {
+    border: 1px solid var(--soft-border);
+    background: var(--soft-bg);
+    border-radius: 14px;
+    padding: 12px 14px;
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+  }
+  .intro-pill strong {
+    display: block;
+    color: var(--text);
+    font-size: 12px;
+    margin-bottom: 2px;
+  }
+  .intro-pill span:last-child {
+    display: block;
+    color: var(--muted);
+    font-size: 11.5px;
+    line-height: 1.45;
+  }
+  .app-shell {
+    display: grid;
+    gap: 18px;
+  }
+  .step-card, .action-card {
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 22px;
+    box-shadow: var(--panel-shadow);
+  }
+  .step-card-featured {
+    border-color: rgba(255,77,0,0.24);
+  }
+  .optional-card {
+    background: var(--panel-bg-soft);
+  }
+  .step-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+  .step-number {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #ff4d00, #ff9500);
+    color: #fff;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    font-weight: 700;
+    flex: 0 0 auto;
+  }
+  .step-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 26px;
+    letter-spacing: 2px;
+    line-height: 1;
+  }
+  .step-copy {
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.55;
+    margin-top: 5px;
+  }
+  .required-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: rgba(255,77,0,0.08);
+    border: 1px solid rgba(255,77,0,0.18);
+    color: var(--accent2);
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .section-label.compact {
+    margin-top: 0;
+  }
+  .field-soft {
+    padding: 14px;
+    border: 1px solid var(--soft-border);
+    border-radius: 14px;
+    background: var(--soft-bg-2);
+  }
+  .quick-exercises {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0 12px;
+  }
+  .quick-exercises button {
+    border: 1px solid rgba(255,77,0,0.25);
+    background: rgba(255,77,0,0.08);
+    color: var(--accent2);
+    border-radius: 999px;
+    padding: 8px 11px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.16s, border-color 0.16s, background 0.16s;
+  }
+  .quick-exercises button:hover {
+    transform: translateY(-1px);
+    border-color: rgba(255,77,0,0.55);
+    background: rgba(255,77,0,0.14);
+  }
+  .selection-helper {
+    display: none;
+    align-items: center;
+    gap: 10px;
+    margin: 8px 0 10px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(0,232,122,0.06);
+    border: 1px solid rgba(0,232,122,0.18);
+  }
+  .selection-helper.show {
+    display: flex;
+  }
+  .selection-helper .selected-icon {
+    width: 34px;
+    height: 34px;
+    display: grid;
+    place-items: center;
+    border-radius: 10px;
+    background: rgba(0,232,122,0.08);
+    font-size: 18px;
+  }
+  .selection-helper strong {
+    display: block;
+    font-size: 12px;
+    color: var(--green);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+  }
+  .selection-helper span:last-child {
+    color: var(--text);
+    font-size: 14px;
+  }
+  .progress-wrap {
+    margin-bottom: 14px;
+  }
+  .progress-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .progress-track {
+    height: 8px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #ff4d00, #ff9500);
+    transition: width 0.25s ease;
+  }
+  .action-copy {
+    color: var(--muted);
+    font-size: 12.5px;
+    line-height: 1.55;
+    margin: 2px 0 12px;
+  }
+  .visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0,0,0,0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+  }
+
+  body.theme-light input,
+  body.theme-light select,
+  body.theme-light .exercise-picker,
+  body.theme-light .result-card,
+  body.theme-light .stat-box,
+  body.theme-light .cal-hero,
+  body.theme-light .intensity-bar {
+    box-shadow: 0 1px 0 rgba(24,20,28,0.03);
+  }
+  body.theme-light .exercise-search-row {
+    background: rgba(24,20,28,0.018);
+  }
+  body.theme-light .exercise-option {
+    background: rgba(255,255,255,0.72);
+  }
+  body.theme-light .exercise-option:hover {
+    background: rgba(255,77,0,0.07);
+  }
+  body.theme-light .exercise-option.active {
+    background: rgba(255,77,0,0.13);
+  }
+  body.theme-light .resistance-panel {
+    background: rgba(129,53,200,0.055);
+  }
+  body.theme-light .cardio-panel {
+    background: rgba(0,138,80,0.045);
+  }
+  body.theme-light .method-box {
+    background: rgba(23,110,214,0.055);
+  }
+  body.theme-light .result-header {
+    background: linear-gradient(135deg, rgba(255,77,0,0.13), rgba(255,149,0,0.06));
+  }
+
+
+  /* Layout horizontal para telas maiores */
+  @media (min-width: 900px) {
+    .intro-panel {
+      display: grid;
+      grid-template-columns: minmax(0, 0.95fr) minmax(420px, 1.35fr);
+      align-items: center;
+      gap: 14px 24px;
+      margin: -10px 0 18px;
+      padding: 18px 20px;
+    }
+    .intro-title,
+    .intro-copy {
+      grid-column: 1;
+    }
+    .intro-grid {
+      grid-column: 2;
+      grid-row: 1 / span 2;
+      margin-top: 0;
+    }
+    .intro-pill {
+      padding: 10px 12px;
+    }
+    .app-shell {
+      grid-template-columns: minmax(0, 1fr) minmax(370px, 0.82fr);
+      grid-template-areas:
+        "personal exercise"
+        "details exercise"
+        "action exercise";
+      align-items: start;
+      gap: 16px;
+    }
+    .personal-card { grid-area: personal; }
+    .exercise-card { grid-area: exercise; position: sticky; top: 18px; }
+    .details-card { grid-area: details; }
+    .action-panel { grid-area: action; }
+    .step-card, .action-card {
+      padding: 19px;
+      border-radius: 18px;
+    }
+    .step-head {
+      margin-bottom: 14px;
+    }
+    .step-number {
+      width: 30px;
+      height: 30px;
+      border-radius: 9px;
+    }
+    .step-title {
+      font-size: 24px;
+    }
+    input, select {
+      padding: 11px 13px;
+      border-radius: 9px;
+    }
+    .sex-btn {
+      padding: 11px;
+    }
+    .quick-exercises {
+      gap: 7px;
+      margin: 8px 0 10px;
+    }
+    .quick-exercises button {
+      padding: 7px 10px;
+      font-size: 11.5px;
+    }
+    .exercise-list {
+      max-height: 252px;
+      padding: 7px;
+    }
+    .exercise-options {
+      grid-template-columns: 1fr;
+      gap: 6px;
+    }
+    .exercise-option {
+      min-height: 38px;
+      padding: 9px 11px;
+      font-size: 12.8px;
+    }
+    .duration-field,
+    .bpm-field {
+      grid-column: span 1;
+    }
+    .duration-field .hint,
+    .bpm-field .hint {
+      font-size: 10.5px;
+    }
+    .resistance-panel,
+    .cardio-panel {
+      padding: 15px;
+      border-radius: 13px;
+    }
+    .rp-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .calc-btn {
+      margin-top: 6px;
+      padding: 15px;
+    }
+    #result {
+      margin-top: 14px;
+    }
+  }
+
+  @media (min-width: 1100px) {
+    .app-shell {
+      grid-template-columns: minmax(0, 1fr) minmax(410px, 0.78fr);
+    }
+    .exercise-list {
+      max-height: 285px;
+    }
+  }
+
+  @media (max-width: 760px) {
+    .wrapper { padding: 14px 14px 22px; }
+    .app-topbar {
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    header {
+      flex-direction: column;
+      gap: 2px;
+    }
+    .logo {
+      font-size: 29px;
+      letter-spacing: 2px;
+    }
+    .tagline {
+      font-size: 8.8px;
+      max-width: 170px;
+      padding-top: 0;
+    }
+    .theme-toolbar {
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .example-button {
+      height: 40px;
+      padding: 0 12px;
+      font-size: 10.5px;
+      letter-spacing: 0.5px;
+    }
+    .example-button::after {
+      width: 220px;
+      right: -52px;
+    }
+    .example-popover {
+      right: -52px;
+      padding: 14px;
+    }
+    .example-grid {
+      grid-template-columns: 1fr;
+    }
+    .theme-toggle {
+      width: 46px;
+      height: 46px;
+    }
+    .theme-toggle__icon {
+      width: 20px;
+      height: 20px;
+    }
+    .intro-panel { margin-top: 0; }
+    .intro-grid { grid-template-columns: 1fr; }
+    .step-card, .action-card { padding: 18px; border-radius: 18px; }
+    .step-head { gap: 11px; }
+    .step-title { font-size: 23px; }
+  }
+
+
+  .app-footer {
+    margin-top: 10px;
+    padding: 6px 8px 0;
+    text-align: center;
+    color: var(--muted);
+    font-size: 11.5px;
+    letter-spacing: 0.4px;
+    opacity: 0.82;
+  }
+
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<div class="app-topbar">
+<header>
+  <div class="logo">Move Burn</div>
+  <div class="tagline">Calculadora de Gasto Calórico por Exercício</div>
+  <div class="science-badge">Equações Científicas de Alta Precisão</div>
+</header>
+
+<div class="theme-toolbar" aria-label="Ações rápidas do app">
+  <div class="example-wrap">
+    <button type="button" class="example-button" id="example-button" onclick="fillExample()" data-tooltip="Clique para preencher todos os campos com um exemplo" title="Clique para preencher todos os campos com um exemplo">Ver exemplo</button>
+  </div>
+
+  <button type="button" class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Alternar tema" aria-pressed="false" title="Alternar tema">
+    <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="12" cy="12" r="4.25"></circle>
+      <path d="M12 2.75V5"></path>
+      <path d="M12 19V21.25"></path>
+      <path d="M2.75 12H5"></path>
+      <path d="M19 12h2.25"></path>
+      <path d="M5.45 5.45 7.1 7.1"></path>
+      <path d="M16.9 16.9 18.55 18.55"></path>
+      <path d="M18.55 5.45 16.9 7.1"></path>
+      <path d="M7.1 16.9 5.45 18.55"></path>
+    </svg>
+    <svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5Z"></path>
+    </svg>
+  </button>
+</div>
+</div>
+
+<div class="intro-panel">
+  <div class="intro-title">Preenchimento guiado</div>
+  <p class="intro-copy">A calculadora foi organizada em passos curtos. Primeiro informe os dados do corpo, depois escolha o exercício e, se quiser mais precisão, preencha os detalhes extras que aparecerem.</p>
+  <div class="intro-grid">
+    <div class="intro-pill"><span>1</span><span><strong>Dados básicos</strong><span>Peso, altura, idade e sexo.</span></span></div>
+    <div class="intro-pill"><span>2</span><span><strong>Exercício</strong><span>Busque pelo nome ou use os atalhos.</span></span></div>
+    <div class="intro-pill"><span>3</span><span><strong>Precisão extra</strong><span>Campos opcionais aparecem conforme a atividade.</span></span></div>
+  </div>
+</div>
+
+<main class="app-shell" aria-label="Formulário da calculadora">
+<section class="step-card personal-card">
+  <div class="step-head">
+    <div class="step-number">1</div>
+    <div>
+      <div class="step-title">Dados pessoais</div>
+      <p class="step-copy">Essas informações são usadas para estimar metabolismo, intensidade e gasto energético com mais coerência.</p>
+      <div class="required-note">* Campos obrigatórios</div>
+    </div>
+  </div>
+<div class="form-grid">
+  <div class="field">
+    <label>Peso (kg)<span class="req">*</span></label>
+    <input type="number" id="weight" min="30" max="300" step="0.1" placeholder="ex: 80.0">
+  </div>
+  <div class="field">
+    <label>Altura (cm)<span class="req">*</span></label>
+    <input type="number" id="height" min="100" max="250" placeholder="ex: 175">
+  </div>
+  <div class="field">
+    <label>Idade (anos)<span class="req">*</span></label>
+    <input type="number" id="age" min="10" max="100" placeholder="ex: 28">
+  </div>
+  <div class="field">
+    <label>Sexo biológico<span class="req">*</span></label>
+    <div class="sex-toggle">
+      <div class="sex-btn active" id="btn-M" onclick="setSex('M')">♂ Masculino</div>
+      <div class="sex-btn" id="btn-F" onclick="setSex('F')">♀ Feminino</div>
+    </div>
+  </div>
+  <div class="field span2">
+    <div class="bf-toggle-row">
+      <label class="toggle-switch">
+        <input type="checkbox" id="bf-toggle" onchange="toggleBF()">
+        <div class="toggle-track"></div>
+        <div class="toggle-knob"></div>
+      </label>
+      <span class="toggle-label">Informar % de gordura corporal (aumenta precisão do BMR)</span>
+    </div>
+    <span class="hint">Permite usar a fórmula Katch-McArdle — a mais precisa por trabalhar com massa magra diretamente.</span>
+  </div>
+  <div class="field span2 cond-field" id="field-bf">
+    <label>% de Gordura Corporal</label>
+    <input type="number" id="bf" min="3" max="60" step="0.1" placeholder="ex: 18.5">
+    <span class="hint">Típico: homens 6–25% · mulheres 14–32%</span>
+  </div>
+</div>
+</section>
+
+<section class="step-card step-card-featured exercise-card">
+  <div class="step-head">
+    <div class="step-number">2</div>
+    <div>
+      <div class="step-title">Exercício realizado</div>
+      <p class="step-copy">Escolha a atividade, informe duração e frequência cardíaca média. Os atalhos ajudam a chegar mais rápido nas opções comuns.</p>
+    </div>
+  </div>
+<div class="form-grid">
+  <div class="field span2">
+    <label>Tipo de Exercício ou Grupo<span class="req">*</span></label>
+    <span class="hint">Use os atalhos ou abra a lista completa apenas quando precisar. Depois, confira a opção marcada em verde.</span>
+    <div class="quick-exercises" aria-label="Atalhos de exercícios frequentes">
+      <button type="button" onclick="selectExercise('strength_legs')">Pernas</button>
+      <button type="button" onclick="selectExercise('strength_chest')">Peitoral</button>
+      <button type="button" onclick="selectExercise('treadmill_run')">Corrida</button>
+      <button type="button" onclick="selectExercise('spinning')">Spinning</button>
+      <button type="button" onclick="selectExercise('hiit_general')">HIIT</button>
+      <button type="button" onclick="selectExercise('walk_mod')">Caminhada</button>
+    </div>
+    <div class="selection-helper" id="selected-exercise-card" aria-live="polite">
+      <div class="selected-icon" id="selected-exercise-icon">✓</div>
+      <div><strong>Selecionado</strong><span id="selected-exercise-name">—</span></div>
+    </div>
+    <button type="button" class="exercise-toggle" id="exercise-toggle" onclick="toggleExercisePicker()" aria-expanded="false" aria-controls="exercise-picker-panel">
+      <span class="exercise-toggle-text">Abrir lista completa de exercícios</span>
+      <span class="exercise-toggle-icon" aria-hidden="true">⌄</span>
+    </button>
+    <div class="exercise-picker" id="exercise-picker-panel" hidden>
+      <div class="search-wrap exercise-search-row">
+        <span class="search-icon" aria-hidden="true">🔍</span>
+        <input type="search" id="exercise-search" placeholder="Pesquisar exercício ou grupo muscular..." autocomplete="off" oninput="filterExercises()">
+      </div>
+      <div class="exercise-list" id="exercise-list"></div>
+      <div class="exercise-empty" id="exercise-empty">Nenhum exercício encontrado. Tente outro termo.</div>
+    </div>
+    <select id="exercise" class="exercise-native" onchange="onExerciseChange()" aria-hidden="true" tabindex="-1">
+      <option value="">— Selecione exercício ou grupo —</option>
+
+      <optgroup label="🏋️ Musculação">
+        <option value="strength_arms" data-search="musculacao braços bracos biceps triceps ombro ombros superior">Braços</option>
+        <option value="strength_back" data-search="musculacao costas dorso remada puxada barra fixa">Costas</option>
+        <option value="strength_abs" data-search="musculacao abdomen abdomem abdômen abdominal core prancha">Abdômen</option>
+        <option value="strength_chest" data-search="musculacao peitoral peito supino crossover flexao">Peitoral</option>
+        <option value="strength_legs" data-search="musculacao pernas perna quadriceps posterior panturrilha agachamento leg press">Pernas</option>
+        <option value="strength_glutes" data-search="musculacao gluteo glúteo gluteos glúteos quadril hip thrust">Glúteo</option>
+      </optgroup>
+
+      <optgroup label="⚡ Alta Intensidade e Compostos">
+        <option value="powerlifting">Powerlifting (máxima intensidade, séries pesadas)</option>
+        <option value="olympic_lifting">Levantamento olímpico (snatch / clean &amp; jerk)</option>
+        <option value="crossfit">CrossFit — WOD geral</option>
+        <option value="crossfit_intense">CrossFit — WOD intenso / competição</option>
+        <option value="strongman">Strongman / Treinamento de força extrema</option>
+        <option value="full_body_compound">Treino full-body compostos</option>
+        <option value="cluster_sets">Cluster sets / Rest-pause intenso</option>
+        <option value="drop_sets">Drop sets contínuos</option>
+      </optgroup>
+
+      <optgroup label="💪 Funcional e Peso Corporal">
+        <option value="calisthenics_mod">Calistenia moderada (pull-ups, dips, push-ups)</option>
+        <option value="calisthenics_intense">Calistenia avançada (muscle-up, planche, L-sit)</option>
+        <option value="bodyweight_circuit">Circuito funcional / Peso corporal</option>
+        <option value="kettlebell_mod">Kettlebell — moderado (swing, goblet squat)</option>
+        <option value="kettlebell_intense">Kettlebell — intenso (snatch, clean, complexos)</option>
+        <option value="battle_ropes">Battle ropes</option>
+        <option value="trx">TRX / Treinamento em suspensão</option>
+        <option value="circuit_weight">Circuito com pesos contínuo</option>
+        <option value="box_jump">Box jump / Saltos pliométricos</option>
+        <option value="burpee">Burpees</option>
+        <option value="sled_push">Empurrar / puxar trenó</option>
+        <option value="medicine_ball">Treino com medicine ball</option>
+        <option value="sandbag">Treino com sandbag / atlas stone</option>
+        <option value="ring_muscle_up">Muscle-up nas argolas</option>
+        <option value="plyo_pushup">Flexão pliométrica / clap push-up</option>
+        <option value="wall_balls">Wall balls (CrossFit)</option>
+        <option value="tire_flip">Virar pneu</option>
+      </optgroup>
+
+      <optgroup label="⚡ HIIT — Alta Intensidade Intervalada">
+        <option value="hiit_general">HIIT geral (30s on / 30s off)</option>
+        <option value="hiit_tabata">HIIT Tabata (20s on / 10s off)</option>
+        <option value="hiit_sprint_tread">HIIT com sprints na esteira</option>
+        <option value="hiit_bike">HIIT na bike / spinning</option>
+        <option value="hiit_rowing">HIIT no remo ergômetro</option>
+        <option value="hiit_assault">HIIT na Assault Bike</option>
+        <option value="amrap">AMRAP / For Time (CrossFit style)</option>
+        <option value="hiit_skierg">HIIT no SkiErg</option>
+        <option value="hiit_stair">HIIT na escada / stair climber</option>
+        <option value="emom">EMOM (every minute on the minute)</option>
+        <option value="hiit_rower_run">HIIT remo + corrida (intervalo misto)</option>
+      </optgroup>
+
+      <optgroup label="🎯 Aparelhos de Cardio Indoor">
+        <option value="treadmill_walk">Esteira — caminhada (0–3% inclinação)</option>
+        <option value="treadmill_incline">Esteira — inclinada (5–10%)</option>
+        <option value="treadmill_incline_steep">Esteira — inclinada máxima (10–15%)</option>
+        <option value="treadmill_run">Esteira — corrida</option>
+        <option value="spinning">Spinning / Bike indoor (moderado)</option>
+        <option value="spinning_intense">Spinning intenso / aula de bike</option>
+        <option value="stationary_bike">Bicicleta estacionária (leve)</option>
+        <option value="elliptical_mod">Elíptico moderado</option>
+        <option value="elliptical_intense">Elíptico intenso (alta resistência)</option>
+        <option value="elliptical_reverse">Elíptico (movimento reverso)</option>
+        <option value="rowing_machine">Remo ergômetro — moderado</option>
+        <option value="rowing_machine_intense">Remo ergômetro — intenso</option>
+        <option value="stair_climber">Stair climber / Escada rolante</option>
+        <option value="stair_climber_heavy">Stair climber — alta resistência</option>
+        <option value="ski_erg">SkiErg (indoor)</option>
+        <option value="assault_bike">Assault Bike / AirBike</option>
+        <option value="versa_climber">VersaClimber / Escalada vertical</option>
+        <option value="jacob_ladder">Jacob's Ladder / Escada infinita</option>
+        <option value="recumbent_bike">Bicicleta reclinada (recumbent)</option>
+        <option value="arm_ergometer">Ergômetro de braço (handcycle)</option>
+      </optgroup>
+
+      <optgroup label="🧘 Mente-Corpo e Mobilidade">
+        <option value="yoga_hatha">Yoga Hatha (leve / restaurativo)</option>
+        <option value="yoga_vinyasa">Yoga Vinyasa / Power Yoga</option>
+        <option value="yoga_hot">Hot Yoga / Bikram (sala aquecida)</option>
+        <option value="yoga_aerial">Yoga aéreo (aerial yoga)</option>
+        <option value="pilates_mat">Pilates solo</option>
+        <option value="pilates_reformer">Pilates reformer</option>
+        <option value="pilates_cadillac">Pilates Cadillac / Trapeze</option>
+        <option value="stretching">Alongamento / Mobilidade</option>
+        <option value="tai_chi">Tai Chi / Qigong</option>
+        <option value="barre">Barre workout</option>
+        <option value="breathwork">Breathwork / Wim Hof (respiração ativa)</option>
+      </optgroup>
+
+      <optgroup label="🥊 Esportes de Combate">
+        <option value="boxing_bag">Boxe — saco / mitts (técnico)</option>
+        <option value="boxing_spar">Boxe — sparring (combate)</option>
+        <option value="muay_thai">Muay Thai (treino geral)</option>
+        <option value="jiu_jitsu">Jiu-Jitsu (drilling + rolamento)</option>
+        <option value="wrestling">Luta livre / Judô (treino)</option>
+        <option value="karate">Karatê / Taekwondo (katas + combate)</option>
+        <option value="mma">MMA (treino misto)</option>
+        <option value="capoeira">Capoeira</option>
+      </optgroup>
+
+      <optgroup label="💃 Dança e Aula Coletiva">
+        <option value="zumba">Zumba</option>
+        <option value="dance_aerobic">Aeróbica / Step aerobic</option>
+        <option value="dance_ballroom">Dança de salão</option>
+        <option value="dance_hip_hop">Hip-hop / Street dance</option>
+        <option value="dance_ballet">Ballet / Dança clássica</option>
+        <option value="indoor_climbing">Escalada indoor / Boulder</option>
+        <option value="jump_rope_mod">Corda de pular (moderado)</option>
+        <option value="jump_rope_intense">Corda de pular (duplo/intenso)</option>
+      </optgroup>
+
+      <optgroup label="🏊 Natação e Aquáticos">
+        <option value="swim_free_slow">Natação livre — lento (recuperação)</option>
+        <option value="swim_free_mod">Natação livre — moderado</option>
+        <option value="swim_free_fast">Natação livre — rápido / competição</option>
+        <option value="swim_butterfly">Nado borboleta</option>
+        <option value="swim_backstroke">Nado costas</option>
+        <option value="swim_breaststroke">Nado peito</option>
+        <option value="water_aerobics">Hidroginástica</option>
+        <option value="water_polo">Polo aquático</option>
+      </optgroup>
+
+      <optgroup label="🏃 Corrida e Caminhada">
+        <option value="walk_slow">Caminhada leve (até 4 km/h)</option>
+        <option value="walk_mod">Caminhada moderada (4–5.5 km/h)</option>
+        <option value="walk_fast">Caminhada rápida / nórdica (5.5–6.5 km/h)</option>
+        <option value="hike">Trilha / Trekking (terreno irregular)</option>
+        <option value="run_jog">Corrida leve / Jogging (6–8 km/h)</option>
+        <option value="run_mod">Corrida moderada (8–10 km/h)</option>
+        <option value="run_fast">Corrida rápida (10–12 km/h)</option>
+        <option value="run_sprint">Sprint / Corrida intensa (&gt;12 km/h)</option>
+        <option value="trail_run">Corrida em trilha / montanha</option>
+      </optgroup>
+
+      <optgroup label="🚴 Ciclismo">
+        <option value="bike_leisure">Ciclismo lazer (até 16 km/h)</option>
+        <option value="bike_mod">Ciclismo moderado (16–22 km/h)</option>
+        <option value="bike_fast">Ciclismo intenso (22–28 km/h)</option>
+        <option value="bike_race">Ciclismo de competição (&gt;28 km/h)</option>
+        <option value="mtb">Mountain Bike (terreno)</option>
+      </optgroup>
+
+      <optgroup label="⚽ Esportes Coletivos">
+        <option value="soccer">Futebol (campo)</option>
+        <option value="futsal">Futsal</option>
+        <option value="basketball">Basquete</option>
+        <option value="volleyball">Vôlei</option>
+        <option value="beach_volleyball">Vôlei de praia</option>
+        <option value="handball">Handebol</option>
+        <option value="rugby">Rugby</option>
+      </optgroup>
+
+      <optgroup label="🎾 Raquete">
+        <option value="tennis">Tênis (simples)</option>
+        <option value="squash">Squash</option>
+        <option value="badminton">Badminton</option>
+        <option value="table_tennis">Tênis de mesa</option>
+        <option value="padel">Padel / Beach tennis</option>
+      </optgroup>
+
+      <optgroup label="🌊 Outros">
+        <option value="surf">Surfe</option>
+        <option value="kayak">Caiaque / Remo a remo</option>
+        <option value="paddleboard">Stand-up Paddle</option>
+        <option value="skiing">Esqui alpino</option>
+        <option value="cross_country_ski">Esqui cross-country</option>
+        <option value="snowboard">Snowboard</option>
+        <option value="rollerskate">Patinação inline / roller</option>
+        <option value="skateboard">Skate</option>
+        <option value="climbing">Escalada outdoor</option>
+        <option value="golf">Golfe (caminhando)</option>
+        <option value="horse_riding">Equitação</option>
+      </optgroup>
+    </select>
+  </div>
+
+  <!-- Campos condicionais de velocidade/distância -->
+  <div class="field cond-field" id="field-speed">
+    <label>Velocidade (km/h)</label>
+    <input type="number" id="speed" min="1" max="50" step="0.5" placeholder="ex: 10.0">
+  </div>
+  <div class="field cond-field" id="field-distance">
+    <label>Distância (km)</label>
+    <input type="number" id="distance" min="0.1" max="300" step="0.1" placeholder="ex: 5.0">
+  </div>
+
+  <div class="field duration-field">
+    <label>Duração (minutos)<span class="req">*</span></label>
+    <input type="number" id="duration" min="1" max="600" placeholder="ex: 60">
+    <span class="hint">Informe o tempo total do exercício, sem incluir pausas longas fora do treino.</span>
+  </div>
+  <div class="field bpm-field">
+    <label>Frequência Cardíaca Média (bpm)<span class="req">*</span></label>
+    <input type="number" id="bpm" min="40" max="220" placeholder="ex: 145">
+    <span class="hint">Use monitor cardíaco ou relógio. Estimativa: ~65% FCmax para moderado, ~80% para intenso.</span>
+  </div>
+</div>
+</section>
+
+<section class="step-card optional-card details-card">
+  <div class="step-head">
+    <div class="step-number">3</div>
+    <div>
+      <div class="step-title">Detalhes extras</div>
+      <p class="step-copy">Preencha apenas quando tiver os dados. Esses campos aparecem automaticamente para musculação ou cardio com potência.</p>
+    </div>
+  </div>
+
+<!-- Painel de musculação (séries/reps/carga) -->
+<div class="resistance-panel" id="resistance-panel">
+  <div class="rp-title">Detalhes de Musculação — Modelo Epley + Custo Energético por Repetição</div>
+  <div class="rp-grid">
+    <div class="field">
+      <label>Nº de Séries</label>
+      <input type="number" id="rp-sets" min="1" max="30" placeholder="ex: 4" value="">
+    </div>
+    <div class="field">
+      <label>Reps por Série</label>
+      <input type="number" id="rp-reps" min="1" max="50" placeholder="ex: 10" value="">
+    </div>
+    <div class="field">
+      <label>Carga (kg)</label>
+      <input type="number" id="rp-load" min="0" max="600" step="0.5" placeholder="ex: 80" value="">
+    </div>
+  </div>
+  <p class="rp-hint">Opcional mas aumenta muito a precisão para musculação. Usa o modelo de custo energético por repetição (Haff &amp; Triplett, NSCA 2016) ponderado pelo 1RM estimado pela fórmula de Epley. Deixe em branco para usar apenas MET + FC.</p>
+</div>
+
+<!-- Painel extra para cardio indoor (wattagem) -->
+<div class="cardio-panel" id="cardio-panel">
+  <div class="cp-title">Wattagem / Potência Média (opcional — alta precisão)</div>
+  <div class="form-grid">
+    <div class="field">
+      <label>Potência média (Watts)</label>
+      <input type="number" id="cp-watts" min="10" max="2000" placeholder="ex: 200">
+      <span class="hint">Disponível no display da bike, remo ou ciclômetro. Fórmula: kcal = W × t(s) × 0.2389 / eficiência mecânica.</span>
+    </div>
+    <div class="field">
+      <label>Eficiência mecânica</label>
+      <select id="cp-efficiency">
+        <option value="0.22">Ciclismo / Spinning — 22% (padrão)</option>
+        <option value="0.20">Remo ergômetro — 20%</option>
+        <option value="0.18">SkiErg / AirBike — 18%</option>
+        <option value="0.16">Elíptico — 16%</option>
+      </select>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="action-card action-panel">
+  <div class="progress-wrap" aria-live="polite">
+    <div class="progress-row">
+      <span>Campos obrigatórios</span>
+      <span id="form-progress-text">0/6 preenchidos</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="form-progress-fill"></div></div>
+  </div>
+  <p class="action-copy">Quando os 6 campos obrigatórios estiverem preenchidos, o cálculo já pode ser feito. Os campos opcionais servem apenas para refinar a estimativa.</p>
+<div id="error-msg" class="error-msg"></div>
+<button class="calc-btn" onclick="calculate()">⚡ Calcular Gasto Calórico</button>
+</section>
+</main>
+
+<!-- RESULTADO -->
+<div id="result">
+  <div class="result-card">
+    <div class="result-header">
+      <div class="res-icon" id="res-icon">🏋️</div>
+      <div>
+        <div class="res-name" id="res-name">—</div>
+        <div class="res-sub" id="res-sub">—</div>
+      </div>
+    </div>
+    <div class="result-body">
+      <div class="cal-hero">
+        <div class="cal-number" id="res-cal">—</div>
+          <div class="cal-unit">kcal do exercício</div>
+        <div class="cal-range" id="res-range">—</div>
+      </div>
+
+      <!-- Breakdown visual -->
+      <div class="breakdown-section">
+        <div class="breakdown-title">Composição do Gasto</div>
+        <div class="breakdown-bar">
+          <div class="bb-seg activity" id="bb-activity" style="width:0%"></div>
+          <div class="bb-seg epoc" id="bb-epoc" style="width:0%"></div>
+          <div class="bb-seg bmr-rest" id="bb-bmr" style="width:0%"></div>
+        </div>
+        <div class="breakdown-legend">
+          <div class="bl-item"><div class="bl-dot activity"></div><span id="bl-activity-txt">Exercício —</span></div>
+          <div class="bl-item"><div class="bl-dot epoc"></div><span id="bl-epoc-txt">Pós-exercício não incluído</span></div>
+          <div class="bl-item"><div class="bl-dot bmr-rest"></div><span id="bl-bmr-txt">Repouso descontado</span></div>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-lbl">Kcal / min</div>
+          <div class="stat-val orange" id="res-permin">—</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Duração</div>
+          <div class="stat-val" id="res-duration">—</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">IMC</div>
+          <div class="stat-val green" id="res-imc">—</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-lbl">Zona Cardíaca</div>
+          <div class="stat-val orange" id="res-zone">—</div>
+        </div>
+        <div class="stat-box" id="sb-speed" style="display:none">
+          <div class="stat-lbl">Velocidade</div>
+          <div class="stat-val blue" id="res-speed">—</div>
+        </div>
+        <div class="stat-box" id="sb-dist" style="display:none">
+          <div class="stat-lbl">Distância</div>
+          <div class="stat-val blue" id="res-dist">—</div>
+        </div>
+        <div class="stat-box" id="sb-lbm" style="display:none">
+          <div class="stat-lbl">Massa Magra</div>
+          <div class="stat-val green" id="res-lbm">—</div>
+        </div>
+        <div class="stat-box" id="sb-1rm" style="display:none">
+          <div class="stat-lbl">1RM Estimado</div>
+          <div class="stat-val purple" id="res-1rm">—</div>
+        </div>
+        <div class="stat-box" id="sb-volume" style="display:none">
+          <div class="stat-lbl">Volume Total</div>
+          <div class="stat-val purple" id="res-volume">—</div>
+        </div>
+        <div class="stat-box" id="sb-watts" style="display:none">
+          <div class="stat-lbl">Potência</div>
+          <div class="stat-val blue" id="res-watts">—</div>
+        </div>
+      </div>
+      <div class="intensity-bar">
+        <div class="int-row">
+          <span>Intensidade do Esforço</span>
+          <span class="int-name" id="res-intname">—</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" id="res-bar"></div></div>
+      </div>
+      <div class="method-box" id="res-method">—</div>
+      <p class="disclaimer">⚠️ Valores estimados. A variabilidade individual (condicionamento, genética, temperatura, hidratação, nível de fadiga) pode causar diferenças de ±10–20% em relação a medições por calorimetria indireta. Consulte um profissional de educação física ou nutricionista.</p>
+    </div>
+  </div>
+</div>
+
+<footer class="app-footer">© 2026 | Developed by Anaires Wu</footer>
+
+</div>
+<script>
+let sex = 'M';
+
+function setTheme(theme) {
+  const mode = theme === 'light' ? 'light' : 'dark';
+  document.body.classList.toggle('theme-light', mode === 'light');
+
+  const themeToggle = document.getElementById('theme-toggle');
+  if (themeToggle) {
+    const isLight = mode === 'light';
+    themeToggle.setAttribute('aria-pressed', isLight ? 'true' : 'false');
+    themeToggle.setAttribute('aria-label', isLight ? 'Ativar tema escuro' : 'Ativar tema claro');
+    themeToggle.setAttribute('title', isLight ? 'Ativar tema escuro' : 'Ativar tema claro');
+  }
+
+  try {
+    localStorage.setItem('moveburn-theme', mode);
+  } catch (e) {}
+}
+
+function toggleTheme() {
+  const isLight = document.body.classList.contains('theme-light');
+  setTheme(isLight ? 'dark' : 'light');
+}
+
+
+function fillExample() {
+  const setValue = (id, value) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.value = value;
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+
+  if (typeof setSex === 'function') setSex('M');
+
+  setValue('weight', '80');
+  setValue('height', '175');
+  setValue('age', '28');
+
+  const bfToggle = document.getElementById('bf-toggle');
+  if (bfToggle) {
+    bfToggle.checked = true;
+    if (typeof toggleBF === 'function') toggleBF();
+  }
+  setValue('bf', '18');
+
+  if (typeof selectExercise === 'function') {
+    selectExercise('run_mod');
+  } else {
+    setValue('exercise', 'run_mod');
+    if (typeof onExerciseChange === 'function') onExerciseChange();
+  }
+
+  setValue('speed', '9.5');
+  setValue('distance', '7.1');
+  setValue('duration', '45');
+  setValue('bpm', '145');
+
+  setValue('rp-sets', '4');
+  setValue('rp-reps', '10');
+  setValue('rp-load', '50');
+
+  setValue('cp-watts', '180');
+  setValue('cp-efficiency', '0.22');
+
+  const search = document.getElementById('exercise-search');
+  if (search) search.value = '';
+
+  const err = document.getElementById('error-msg');
+  if (err) {
+    err.classList.remove('show');
+    err.textContent = '';
+  }
+
+  if (typeof clearAllFieldAlerts === 'function') clearAllFieldAlerts();
+  document.querySelectorAll('.missing-field, .shake-field').forEach((el) => {
+    el.classList.remove('missing-field', 'shake-field');
+  });
+
+  if (typeof updateFormProgress === 'function') updateFormProgress();
+
+  const firstField = document.getElementById('weight');
+  if (firstField && typeof firstField.focus === 'function') {
+    firstField.focus({ preventScroll: true });
+  }
+}
+
+
+function initTheme() {
+  let savedTheme = 'dark';
+  try {
+    savedTheme = localStorage.getItem('moveburn-theme') || savedTheme;
+  } catch (e) {}
+
+  if (!['dark', 'light'].includes(savedTheme)) savedTheme = 'dark';
+  setTheme(savedTheme);
+}
+function setSex(s) {
+  sex = s;
+  document.getElementById('btn-M').classList.toggle('active', s==='M');
+  document.getElementById('btn-F').classList.toggle('active', s==='F');
+  updateFormProgress();
+}
+function toggleBF() {
+  document.getElementById('field-bf').classList.toggle('show', document.getElementById('bf-toggle').checked);
+  updateFormProgress();
+}
+function showCond(id, v) {
+  document.getElementById(id).classList.toggle('show', !!v);
+}
+
+/*
+  ═══════════════════════════════════════════════════════════════════
+  BANCO DE EXERCÍCIOS
+  met    : MET base — Compendium of Physical Activities 2024 (Ainsworth et al.)
+  type   : 'aerobic' | 'resistance' | 'mixed'
+  hrW    : peso do método Keytel (HR) no blend final
+  speed/dist: mostra campos extras
+  cardio : mostra painel de wattagem (cardio indoor com ergômetros)
+  resist : mostra painel de séries/reps/carga
+  ═══════════════════════════════════════════════════════════════════
+*/
+const EX = {
+  // ── MUSCULAÇÃO POR GRUPO MUSCULAR ──
+  strength_arms:        {n:'Musculação — Braços',           i:'💪',met:3.0, t:'resistance',s:false,d:false,w:0.24,resist:true,cardio:false},
+  strength_back:        {n:'Musculação — Costas',           i:'🏋️',met:3.8, t:'resistance',s:false,d:false,w:0.30,resist:true,cardio:false},
+  strength_abs:         {n:'Musculação — Abdômen',          i:'🔥',met:3.5, t:'resistance',s:false,d:false,w:0.26,resist:true,cardio:false},
+  strength_chest:       {n:'Musculação — Peitoral',         i:'🏋️',met:3.8, t:'resistance',s:false,d:false,w:0.30,resist:true,cardio:false},
+  strength_legs:        {n:'Musculação — Pernas',           i:'🦵',met:4.8, t:'resistance',s:false,d:false,w:0.36,resist:true,cardio:false},
+  strength_glutes:      {n:'Musculação — Glúteo',           i:'🦵',met:4.2, t:'resistance',s:false,d:false,w:0.32,resist:true,cardio:false},
+  // ── SUPERIORES ──
+  bench_press:          {n:'Supino',                        i:'🏋️',met:3.5, t:'resistance',s:false,d:false,w:0.28,resist:true,cardio:false},
+  shoulder_press:       {n:'Desenvolvimento',               i:'🏋️',met:3.5, t:'resistance',s:false,d:false,w:0.28,resist:true,cardio:false},
+  lat_pulldown:         {n:'Puxada / Pull-down',           i:'🏋️',met:3.5, t:'resistance',s:false,d:false,w:0.28,resist:true,cardio:false},
+  seated_row:           {n:'Remada sentada',                i:'🏋️',met:3.0, t:'resistance',s:false,d:false,w:0.25,resist:true,cardio:false},
+  bent_row:             {n:'Remada curvada',                i:'🏋️',met:3.5, t:'resistance',s:false,d:false,w:0.28,resist:true,cardio:false},
+  bicep_curl:           {n:'Rosca bíceps',                  i:'💪',met:2.5, t:'resistance',s:false,d:false,w:0.22,resist:true,cardio:false},
+  tricep_ext:           {n:'Tríceps',                       i:'💪',met:2.5, t:'resistance',s:false,d:false,w:0.22,resist:true,cardio:false},
+  lateral_raise:        {n:'Elevação lateral',              i:'🏋️',met:2.5, t:'resistance',s:false,d:false,w:0.22,resist:true,cardio:false},
+  cable_fly:            {n:'Crossover / Voador',            i:'🏋️',met:3.0, t:'resistance',s:false,d:false,w:0.25,resist:true,cardio:false},
+  face_pull:            {n:'Face pull',                     i:'🏋️',met:2.5, t:'resistance',s:false,d:false,w:0.22,resist:true,cardio:false},
+  chest_dip:            {n:'Paralela peitoral',             i:'💪',met:4.5, t:'resistance',s:false,d:false,w:0.35,resist:true,cardio:false},
+  pull_up:              {n:'Barra fixa (Pull-up)',          i:'💪',met:5.0, t:'resistance',s:false,d:false,w:0.38,resist:true,cardio:false},
+  push_up_weighted:     {n:'Flexão com peso',               i:'💪',met:4.0, t:'resistance',s:false,d:false,w:0.32,resist:true,cardio:false},
+  incline_db_press:     {n:'Supino inclinado halteres',     i:'🏋️',met:3.5, t:'resistance',s:false,d:false,w:0.28,resist:true,cardio:false},
+  arnold_press:         {n:'Arnold press',                  i:'🏋️',met:3.5, t:'resistance',s:false,d:false,w:0.28,resist:true,cardio:false},
+  upright_row:          {n:'Remada alta',                   i:'🏋️',met:3.0, t:'resistance',s:false,d:false,w:0.25,resist:true,cardio:false},
+  cable_row:            {n:'Remada polia baixa',            i:'🏋️',met:3.0, t:'resistance',s:false,d:false,w:0.25,resist:true,cardio:false},
+  rear_delt_fly:        {n:'Voador reverso',                i:'🏋️',met:2.5, t:'resistance',s:false,d:false,w:0.22,resist:true,cardio:false},
+  // ── INFERIORES ──
+  squat:                {n:'Agachamento livre',             i:'🏋️',met:5.0, t:'resistance',s:false,d:false,w:0.38,resist:true,cardio:false},
+  leg_press:            {n:'Leg press',                     i:'🏋️',met:4.5, t:'resistance',s:false,d:false,w:0.33,resist:true,cardio:false},
+  romanian_dl:          {n:'Terra romeno',                  i:'🏋️',met:4.5, t:'resistance',s:false,d:false,w:0.33,resist:true,cardio:false},
+  deadlift:             {n:'Levantamento terra',            i:'🏋️',met:6.0, t:'resistance',s:false,d:false,w:0.4,resist:true,cardio:false},
+  sumo_dl:              {n:'Terra sumô',                    i:'🏋️',met:5.5, t:'resistance',s:false,d:false,w:0.38,resist:true,cardio:false},
+  leg_ext:              {n:'Extensora',                     i:'🦵',met:3.0, t:'resistance',s:false,d:false,w:0.22,resist:true,cardio:false},
+  leg_curl:             {n:'Flexora',                       i:'🦵',met:3.0, t:'resistance',s:false,d:false,w:0.22,resist:true,cardio:false},
+  hip_thrust:           {n:'Hip thrust',                    i:'🦵',met:4.0, t:'resistance',s:false,d:false,w:0.32,resist:true,cardio:false},
+  calf_raise:           {n:'Panturrilha',                   i:'🦵',met:2.5, t:'resistance',s:false,d:false,w:0.18,resist:true,cardio:false},
+  hack_squat:           {n:'Hack squat / Smith',            i:'🏋️',met:4.5, t:'resistance',s:false,d:false,w:0.33,resist:true,cardio:false},
+  walking_lunge:        {n:'Avanço / Estocada',             i:'🦵',met:4.5, t:'resistance',s:false,d:false,w:0.35,resist:true,cardio:false},
+  bulgarian_split:      {n:'Bulgarian split squat',         i:'🦵',met:5.0, t:'resistance',s:false,d:false,w:0.38,resist:true,cardio:false},
+  adductor:             {n:'Cadeira adutora/abdutora',      i:'🦵',met:2.5, t:'resistance',s:false,d:false,w:0.18,resist:true,cardio:false},
+  glute_kickback:       {n:'Glúteo no cabo',                i:'🦵',met:3.0, t:'resistance',s:false,d:false,w:0.22,resist:true,cardio:false},
+  goblet_squat:         {n:'Goblet squat',                  i:'🦵',met:4.5, t:'resistance',s:false,d:false,w:0.35,resist:true,cardio:false},
+  step_up:              {n:'Step-up com peso',              i:'🦵',met:4.5, t:'resistance',s:false,d:false,w:0.35,resist:true,cardio:false},
+  nordic_curl:          {n:'Nordic curl',                   i:'🦵',met:4.0, t:'resistance',s:false,d:false,w:0.32,resist:true,cardio:false},
+  box_squat:            {n:'Box squat (pausa)',              i:'🏋️',met:5.0, t:'resistance',s:false,d:false,w:0.38,resist:true,cardio:false},
+  // ── ABDÔMEN ──
+  weighted_crunch:      {n:'Abdominal com peso',            i:'🏋️',met:3.8, t:'resistance',s:false,d:false,w:0.28,resist:true,cardio:false},
+  cable_crunch:         {n:'Abdominal na polia',            i:'🏋️',met:3.8, t:'resistance',s:false,d:false,w:0.28,resist:true,cardio:false},
+  plank:                {n:'Prancha abdominal',             i:'🔥',met:3.3, t:'resistance',s:false,d:false,w:0.24,resist:true,cardio:false},
+  leg_raise:            {n:'Elevação de pernas',            i:'🔥',met:3.5, t:'resistance',s:false,d:false,w:0.26,resist:true,cardio:false},
+  russian_twist:        {n:'Russian twist',                 i:'🔥',met:3.8, t:'resistance',s:false,d:false,w:0.28,resist:true,cardio:false},
+  // ── COMPOSTOS PESADOS ──
+  powerlifting:         {n:'Powerlifting',                  i:'🏆',met:6.0, t:'resistance',s:false,d:false,w:0.38,resist:true,cardio:false},
+  olympic_lifting:      {n:'Levantamento olímpico',         i:'🏆',met:8.0, t:'mixed',     s:false,d:false,w:0.48,resist:true,cardio:false},
+  crossfit:             {n:'CrossFit (WOD geral)',          i:'⚡',met:10.0,t:'mixed',     s:false,d:false,w:0.58,resist:false,cardio:false},
+  crossfit_intense:     {n:'CrossFit (WOD intenso)',        i:'⚡',met:13.5,t:'mixed',     s:false,d:false,w:0.65,resist:false,cardio:false},
+  strongman:            {n:'Strongman',                     i:'🏋️',met:8.0, t:'resistance',s:false,d:false,w:0.42,resist:true,cardio:false},
+  full_body_compound:   {n:'Full-body compostos',           i:'🏋️',met:5.5, t:'resistance',s:false,d:false,w:0.38,resist:true,cardio:false},
+  cluster_sets:         {n:'Cluster sets / Rest-pause',     i:'⚡',met:6.5, t:'resistance',s:false,d:false,w:0.42,resist:true,cardio:false},
+  drop_sets:            {n:'Drop sets',                     i:'🔥',met:5.5, t:'resistance',s:false,d:false,w:0.38,resist:true,cardio:false},
+  // ── FUNCIONAL / PESO CORPORAL ──
+  calisthenics_mod:     {n:'Calistenia moderada',           i:'💪',met:5.0, t:'mixed',     s:false,d:false,w:0.42,resist:false,cardio:false},
+  calisthenics_intense: {n:'Calistenia avançada',           i:'💪',met:8.0, t:'mixed',     s:false,d:false,w:0.52,resist:false,cardio:false},
+  bodyweight_circuit:   {n:'Circuito funcional',            i:'🤸',met:6.5, t:'mixed',     s:false,d:false,w:0.5,resist:false,cardio:false},
+  kettlebell_mod:       {n:'Kettlebell (moderado)',          i:'🔔',met:8.0, t:'mixed',     s:false,d:false,w:0.55,resist:true,cardio:false},
+  kettlebell_intense:   {n:'Kettlebell (intenso)',           i:'🔔',met:10.5,t:'mixed',     s:false,d:false,w:0.62,resist:true,cardio:false},
+  battle_ropes:         {n:'Battle ropes',                  i:'🔥',met:10.5,t:'mixed',     s:false,d:false,w:0.62,resist:false,cardio:false},
+  trx:                  {n:'TRX / Suspensão',               i:'🤸',met:5.0, t:'mixed',     s:false,d:false,w:0.42,resist:false,cardio:false},
+  circuit_weight:       {n:'Circuito com pesos',            i:'🔄',met:7.5, t:'mixed',     s:false,d:false,w:0.52,resist:false,cardio:false},
+  box_jump:             {n:'Box jump / Pliometria',         i:'⬆️',met:8.0, t:'mixed',     s:false,d:false,w:0.52,resist:false,cardio:false},
+  burpee:               {n:'Burpees',                       i:'🔥',met:10.0,t:'mixed',     s:false,d:false,w:0.62,resist:false,cardio:false},
+  sled_push:            {n:'Trenó (empurrar/puxar)',         i:'🏋️',met:9.0, t:'mixed',     s:false,d:false,w:0.52,resist:false,cardio:false},
+  medicine_ball:        {n:'Medicine ball',                 i:'⚾',met:5.0, t:'mixed',     s:false,d:false,w:0.45,resist:false,cardio:false},
+  sandbag:              {n:'Sandbag / Atlas stone',         i:'🏋️',met:7.0, t:'mixed',     s:false,d:false,w:0.48,resist:false,cardio:false},
+  ring_muscle_up:       {n:'Muscle-up nas argolas',         i:'💪',met:8.5, t:'mixed',     s:false,d:false,w:0.55,resist:false,cardio:false},
+  plyo_pushup:          {n:'Flexão pliométrica',            i:'💥',met:7.0, t:'mixed',     s:false,d:false,w:0.52,resist:false,cardio:false},
+  wall_balls:           {n:'Wall balls',                    i:'⚾',met:8.0, t:'mixed',     s:false,d:false,w:0.55,resist:false,cardio:false},
+  tire_flip:            {n:'Virar pneu',                    i:'🏋️',met:8.0, t:'mixed',     s:false,d:false,w:0.5,resist:false,cardio:false},
+  // ── HIIT ──
+  hiit_general:         {n:'HIIT geral',                    i:'⚡',met:11.0,t:'mixed',     s:false,d:false,w:0.65,resist:false,cardio:false},
+  hiit_tabata:          {n:'HIIT Tabata',                   i:'⚡',met:13.0,t:'mixed',     s:false,d:false,w:0.68,resist:false,cardio:false},
+  hiit_sprint_tread:    {n:'HIIT sprints (esteira)',         i:'⚡',met:14.0,t:'mixed',     s:false,d:false,w:0.7,resist:false,cardio:false},
+  hiit_bike:            {n:'HIIT na bike / spinning',       i:'⚡',met:12.5,t:'mixed',     s:false,d:false,w:0.68,resist:false,cardio:true},
+  hiit_rowing:          {n:'HIIT remo ergômetro',           i:'⚡',met:12.0,t:'mixed',     s:false,d:false,w:0.68,resist:false,cardio:true},
+  hiit_assault:         {n:'HIIT Assault Bike',             i:'⚡',met:14.5,t:'mixed',     s:false,d:false,w:0.7,resist:false,cardio:true},
+  amrap:                {n:'AMRAP / For Time (CF)',          i:'⚡',met:11.5,t:'mixed',     s:false,d:false,w:0.65,resist:false,cardio:false},
+  hiit_skierg:          {n:'HIIT SkiErg',                   i:'⚡',met:13.0,t:'mixed',     s:false,d:false,w:0.68,resist:false,cardio:true},
+  hiit_stair:           {n:'HIIT escada / stair climber',   i:'⚡',met:12.5,t:'mixed',     s:false,d:false,w:0.68,resist:false,cardio:true},
+  emom:                 {n:'EMOM',                          i:'⏱️',met:10.0,t:'mixed',     s:false,d:false,w:0.6,resist:false,cardio:false},
+  hiit_rower_run:       {n:'HIIT remo + corrida',           i:'⚡',met:12.5,t:'mixed',     s:false,d:false,w:0.68,resist:false,cardio:false},
+  // ── CARDIO INDOOR ──
+  treadmill_walk:       {n:'Esteira — caminhada',           i:'🚶',met:3.5, t:'aerobic',   s:false,d:false,w:0.68,resist:false,cardio:false},
+  treadmill_incline:    {n:'Esteira — inclinada 5–10%',     i:'⛰️',met:7.0, t:'aerobic',   s:false,d:false,w:0.7,resist:false,cardio:false},
+  treadmill_incline_steep:{n:'Esteira — inclinada 10–15%',  i:'⛰️',met:9.5, t:'aerobic',   s:false,d:false,w:0.72,resist:false,cardio:false},
+  treadmill_run:        {n:'Esteira — corrida',             i:'🏃',met:9.0, t:'aerobic',   s:false,d:false,w:0.72,resist:false,cardio:false},
+  spinning:             {n:'Spinning (moderado)',            i:'🚴',met:8.5, t:'aerobic',   s:false,d:false,w:0.68,resist:false,cardio:true},
+  spinning_intense:     {n:'Spinning intenso / aula',       i:'🚴',met:12.0,t:'aerobic',   s:false,d:false,w:0.72,resist:false,cardio:true},
+  stationary_bike:      {n:'Bicicleta estacionária',        i:'🚴',met:5.5, t:'aerobic',   s:false,d:false,w:0.62,resist:false,cardio:true},
+  elliptical_mod:       {n:'Elíptico moderado',             i:'🏃',met:5.0, t:'aerobic',   s:false,d:false,w:0.62,resist:false,cardio:true},
+  elliptical_intense:   {n:'Elíptico intenso',              i:'🏃',met:7.5, t:'aerobic',   s:false,d:false,w:0.68,resist:false,cardio:true},
+  elliptical_reverse:   {n:'Elíptico reverso',              i:'🏃',met:6.0, t:'aerobic',   s:false,d:false,w:0.65,resist:false,cardio:true},
+  rowing_machine:       {n:'Remo ergômetro (moderado)',     i:'🚣',met:7.0, t:'aerobic',   s:false,d:false,w:0.62,resist:false,cardio:true},
+  rowing_machine_intense:{n:'Remo ergômetro (intenso)',     i:'🚣',met:10.5,t:'aerobic',   s:false,d:false,w:0.68,resist:false,cardio:true},
+  stair_climber:        {n:'Stair climber / Escada',        i:'🪜',met:9.0, t:'aerobic',   s:false,d:false,w:0.68,resist:false,cardio:true},
+  stair_climber_heavy:  {n:'Stair climber — alta resist.',  i:'🪜',met:11.5,t:'aerobic',   s:false,d:false,w:0.72,resist:false,cardio:true},
+  ski_erg:              {n:'SkiErg',                        i:'⛷️',met:9.5, t:'aerobic',   s:false,d:false,w:0.68,resist:false,cardio:true},
+  assault_bike:         {n:'Assault Bike / AirBike',        i:'🔥',met:13.0,t:'aerobic',   s:false,d:false,w:0.72,resist:false,cardio:true},
+  versa_climber:        {n:'VersaClimber',                  i:'🧗',met:11.0,t:'aerobic',   s:false,d:false,w:0.72,resist:false,cardio:false},
+  jacob_ladder:         {n:"Jacob's Ladder",                i:'🪜',met:10.0,t:'aerobic',   s:false,d:false,w:0.7,resist:false,cardio:false},
+  recumbent_bike:       {n:'Bicicleta reclinada',           i:'🚴',met:4.5, t:'aerobic',   s:false,d:false,w:0.58,resist:false,cardio:true},
+  arm_ergometer:        {n:'Ergômetro de braço',            i:'💪',met:5.0, t:'aerobic',   s:false,d:false,w:0.6,resist:false,cardio:true},
+  // ── MENTE-CORPO ──
+  yoga_hatha:           {n:'Yoga Hatha',                    i:'🧘',met:2.5, t:'aerobic',   s:false,d:false,w:0.48,resist:false,cardio:false},
+  yoga_vinyasa:         {n:'Yoga Vinyasa / Power',          i:'🧘',met:4.0, t:'aerobic',   s:false,d:false,w:0.52,resist:false,cardio:false},
+  yoga_hot:             {n:'Hot Yoga / Bikram',             i:'🔥',met:5.0, t:'aerobic',   s:false,d:false,w:0.58,resist:false,cardio:false},
+  yoga_aerial:          {n:'Yoga aéreo',                    i:'🧘',met:3.5, t:'aerobic',   s:false,d:false,w:0.5,resist:false,cardio:false},
+  pilates_mat:          {n:'Pilates solo',                  i:'🧘',met:3.0, t:'aerobic',   s:false,d:false,w:0.42,resist:false,cardio:false},
+  pilates_reformer:     {n:'Pilates reformer',              i:'🧘',met:3.5, t:'aerobic',   s:false,d:false,w:0.48,resist:false,cardio:false},
+  pilates_cadillac:     {n:'Pilates Cadillac / Trapeze',    i:'🧘',met:3.5, t:'aerobic',   s:false,d:false,w:0.48,resist:false,cardio:false},
+  stretching:           {n:'Alongamento / Mobilidade',      i:'🤸',met:2.3, t:'aerobic',   s:false,d:false,w:0.38,resist:false,cardio:false},
+  tai_chi:              {n:'Tai Chi / Qigong',              i:'☯️',met:3.0, t:'aerobic',   s:false,d:false,w:0.42,resist:false,cardio:false},
+  barre:                {n:'Barre workout',                 i:'🩰',met:4.0, t:'aerobic',   s:false,d:false,w:0.52,resist:false,cardio:false},
+  breathwork:           {n:'Breathwork (respiração ativa)', i:'🌬️',met:1.8, t:'aerobic',   s:false,d:false,w:0.35,resist:false,cardio:false},
+  // ── COMBATE ──
+  boxing_bag:           {n:'Boxe (saco/mitts)',              i:'🥊',met:8.3, t:'mixed',     s:false,d:false,w:0.62,resist:false,cardio:false},
+  boxing_spar:          {n:'Boxe sparring',                 i:'🥊',met:11.0,t:'mixed',     s:false,d:false,w:0.68,resist:false,cardio:false},
+  muay_thai:            {n:'Muay Thai',                     i:'🥊',met:10.5,t:'mixed',     s:false,d:false,w:0.65,resist:false,cardio:false},
+  jiu_jitsu:            {n:'Jiu-Jitsu',                     i:'🥋',met:10.0,t:'mixed',     s:false,d:false,w:0.62,resist:false,cardio:false},
+  wrestling:            {n:'Luta livre / Judô',             i:'🥋',met:9.0, t:'mixed',     s:false,d:false,w:0.6,resist:false,cardio:false},
+  karate:               {n:'Karatê / Taekwondo',            i:'🥋',met:8.0, t:'mixed',     s:false,d:false,w:0.58,resist:false,cardio:false},
+  mma:                  {n:'MMA',                           i:'🥊',met:12.0,t:'mixed',     s:false,d:false,w:0.68,resist:false,cardio:false},
+  capoeira:             {n:'Capoeira',                      i:'🥋',met:6.5, t:'mixed',     s:false,d:false,w:0.6,resist:false,cardio:false},
+  // ── DANÇA / COLETIVA ──
+  zumba:                {n:'Zumba',                         i:'💃',met:6.5, t:'aerobic',   s:false,d:false,w:0.62,resist:false,cardio:false},
+  dance_aerobic:        {n:'Aeróbica / Step aerobic',       i:'💃',met:7.0, t:'aerobic',   s:false,d:false,w:0.62,resist:false,cardio:false},
+  dance_ballroom:       {n:'Dança de salão',                i:'💃',met:4.5, t:'aerobic',   s:false,d:false,w:0.52,resist:false,cardio:false},
+  dance_hip_hop:        {n:'Hip-hop / Street dance',        i:'🕺',met:6.0, t:'aerobic',   s:false,d:false,w:0.58,resist:false,cardio:false},
+  dance_ballet:         {n:'Ballet / Dança clássica',       i:'🩰',met:5.0, t:'aerobic',   s:false,d:false,w:0.52,resist:false,cardio:false},
+  indoor_climbing:      {n:'Escalada indoor / Boulder',     i:'🧗',met:8.0, t:'mixed',     s:false,d:false,w:0.52,resist:false,cardio:false},
+  jump_rope_mod:        {n:'Corda de pular (moderado)',      i:'🪢',met:9.8, t:'aerobic',   s:false,d:false,w:0.68,resist:false,cardio:false},
+  jump_rope_intense:    {n:'Corda de pular (intenso)',       i:'🪢',met:12.3,t:'aerobic',   s:false,d:false,w:0.72,resist:false,cardio:false},
+  // ── NATAÇÃO ──
+  swim_free_slow:       {n:'Natação livre (lento)',         i:'🏊',met:5.8, t:'aerobic',   s:false,d:false,w:0.62,resist:false,cardio:false},
+  swim_free_mod:        {n:'Natação livre (moderado)',      i:'🏊',met:8.3, t:'aerobic',   s:false,d:false,w:0.68,resist:false,cardio:false},
+  swim_free_fast:       {n:'Natação livre (rápido)',        i:'🏊',met:11.0,t:'aerobic',   s:false,d:false,w:0.72,resist:false,cardio:false},
+  swim_butterfly:       {n:'Nado borboleta',                i:'🏊',met:13.8,t:'aerobic',   s:false,d:false,w:0.72,resist:false,cardio:false},
+  swim_backstroke:      {n:'Nado costas',                   i:'🏊',met:7.0, t:'aerobic',   s:false,d:false,w:0.65,resist:false,cardio:false},
+  swim_breaststroke:    {n:'Nado peito',                    i:'🏊',met:10.3,t:'aerobic',   s:false,d:false,w:0.68,resist:false,cardio:false},
+  water_aerobics:       {n:'Hidroginástica',                i:'💧',met:4.0, t:'aerobic',   s:false,d:false,w:0.52,resist:false,cardio:false},
+  water_polo:           {n:'Polo aquático',                 i:'🏊',met:10.0,t:'aerobic',   s:false,d:false,w:0.68,resist:false,cardio:false},
+  // ── CORRIDA / CAMINHADA ──
+  walk_slow:            {n:'Caminhada leve',                i:'🚶',met:2.5, t:'aerobic',   s:true, d:true, w:0.68,resist:false,cardio:false},
+  walk_mod:             {n:'Caminhada moderada',            i:'🚶',met:3.5, t:'aerobic',   s:true, d:true, w:0.68,resist:false,cardio:false},
+  walk_fast:            {n:'Caminhada rápida / nórdica',    i:'🚶',met:4.3, t:'aerobic',   s:true, d:true, w:0.68,resist:false,cardio:false},
+  hike:                 {n:'Trilha / Trekking',             i:'🥾',met:6.0, t:'aerobic',   s:true, d:true, w:0.68,resist:false,cardio:false},
+  run_jog:              {n:'Corrida leve / Jogging',        i:'🏃',met:7.0, t:'aerobic',   s:true, d:true, w:0.72,resist:false,cardio:false},
+  run_mod:              {n:'Corrida moderada',              i:'🏃',met:9.8, t:'aerobic',   s:true, d:true, w:0.72,resist:false,cardio:false},
+  run_fast:             {n:'Corrida rápida',                i:'🏃',met:11.5,t:'aerobic',   s:true, d:true, w:0.75,resist:false,cardio:false},
+  run_sprint:           {n:'Sprint / Corrida intensa',      i:'⚡',met:14.5,t:'aerobic',   s:true, d:true, w:0.78,resist:false,cardio:false},
+  trail_run:            {n:'Corrida em trilha',             i:'🏔️',met:10.0,t:'aerobic',   s:true, d:true, w:0.72,resist:false,cardio:false},
+  // ── CICLISMO ──
+  bike_leisure:         {n:'Ciclismo lazer',                i:'🚴',met:4.0, t:'aerobic',   s:true, d:true, w:0.68,resist:false,cardio:false},
+  bike_mod:             {n:'Ciclismo moderado',             i:'🚴',met:8.0, t:'aerobic',   s:true, d:true, w:0.68,resist:false,cardio:false},
+  bike_fast:            {n:'Ciclismo intenso',              i:'🚴',met:10.0,t:'aerobic',   s:true, d:true, w:0.72,resist:false,cardio:false},
+  bike_race:            {n:'Ciclismo de competição',        i:'🏆',met:14.0,t:'aerobic',   s:true, d:true, w:0.78,resist:false,cardio:false},
+  mtb:                  {n:'Mountain Bike',                 i:'🚵',met:8.5, t:'aerobic',   s:true, d:true, w:0.68,resist:false,cardio:false},
+  // ── COLETIVOS ──
+  soccer:               {n:'Futebol',                       i:'⚽',met:7.0, t:'aerobic',   s:false,d:false,w:0.62,resist:false,cardio:false},
+  futsal:               {n:'Futsal',                        i:'⚽',met:9.0, t:'aerobic',   s:false,d:false,w:0.65,resist:false,cardio:false},
+  basketball:           {n:'Basquete',                      i:'🏀',met:6.5, t:'aerobic',   s:false,d:false,w:0.62,resist:false,cardio:false},
+  volleyball:           {n:'Vôlei',                         i:'🏐',met:4.0, t:'aerobic',   s:false,d:false,w:0.58,resist:false,cardio:false},
+  beach_volleyball:     {n:'Vôlei de praia',                i:'🏐',met:5.0, t:'aerobic',   s:false,d:false,w:0.58,resist:false,cardio:false},
+  handball:             {n:'Handebol',                      i:'🤾',met:8.0, t:'aerobic',   s:false,d:false,w:0.62,resist:false,cardio:false},
+  rugby:                {n:'Rugby',                         i:'🏉',met:8.3, t:'aerobic',   s:false,d:false,w:0.62,resist:false,cardio:false},
+  // ── RAQUETE ──
+  tennis:               {n:'Tênis (simples)',               i:'🎾',met:7.3, t:'aerobic',   s:false,d:false,w:0.62,resist:false,cardio:false},
+  squash:               {n:'Squash',                        i:'🎾',met:12.0,t:'aerobic',   s:false,d:false,w:0.68,resist:false,cardio:false},
+  badminton:            {n:'Badminton',                     i:'🏸',met:5.5, t:'aerobic',   s:false,d:false,w:0.58,resist:false,cardio:false},
+  table_tennis:         {n:'Tênis de mesa',                 i:'🏓',met:4.0, t:'aerobic',   s:false,d:false,w:0.52,resist:false,cardio:false},
+  padel:                {n:'Padel / Beach tennis',          i:'🎾',met:6.5, t:'aerobic',   s:false,d:false,w:0.62,resist:false,cardio:false},
+  // ── OUTROS ──
+  surf:                 {n:'Surfe',                         i:'🏄',met:5.0, t:'aerobic',   s:false,d:false,w:0.58,resist:false,cardio:false},
+  kayak:                {n:'Caiaque / Remo a remo',         i:'🚣',met:5.0, t:'aerobic',   s:true, d:true, w:0.58,resist:false,cardio:false},
+  paddleboard:          {n:'Stand-up Paddle',               i:'🏄',met:5.0, t:'aerobic',   s:true, d:true, w:0.58,resist:false,cardio:false},
+  skiing:               {n:'Esqui alpino',                  i:'⛷️',met:7.0, t:'aerobic',   s:true, d:true, w:0.62,resist:false,cardio:false},
+  cross_country_ski:    {n:'Esqui cross-country',           i:'⛷️',met:12.0,t:'aerobic',   s:true, d:true, w:0.68,resist:false,cardio:false},
+  snowboard:            {n:'Snowboard',                     i:'🏂',met:5.3, t:'aerobic',   s:true, d:true, w:0.58,resist:false,cardio:false},
+  rollerskate:          {n:'Patinação inline / roller',     i:'🛼',met:7.0, t:'aerobic',   s:true, d:true, w:0.62,resist:false,cardio:false},
+  skateboard:           {n:'Skate',                         i:'🛹',met:5.0, t:'aerobic',   s:true, d:true, w:0.58,resist:false,cardio:false},
+  climbing:             {n:'Escalada outdoor',              i:'🧗',met:8.0, t:'mixed',     s:false,d:false,w:0.52,resist:false,cardio:false},
+  golf:                 {n:'Golfe (caminhando)',             i:'⛳',met:3.5, t:'aerobic',   s:false,d:false,w:0.52,resist:false,cardio:false},
+  horse_riding:         {n:'Equitação',                     i:'🐴',met:4.0, t:'aerobic',   s:false,d:false,w:0.52,resist:false,cardio:false},
+};
+
+// ═══════════════════════════════════════════════════════════════
+// EQUAÇÕES CIENTÍFICAS
+// ═══════════════════════════════════════════════════════════════
+
+/* BMR — dois métodos:
+   1. Katch-McArdle (1996): usa LBM → mais preciso quando há % gordura
+      BMR = 370 + 21.6 × LBM(kg)
+   2. Mifflin-St Jeor (1990): meta-análise de ~500 adultos
+      Homens:  BMR = 10W + 6.25H − 5A + 5
+      Mulheres:BMR = 10W + 6.25H − 5A − 161                         */
+function calcBMR(w, h, a, bf) {
+  if (bf) {
+    const lbm = w * (1 - bf / 100);
+    return 370 + 21.6 * lbm;
+  }
+  return sex === 'M'
+    ? 10*w + 6.25*h - 5*a + 5
+    : 10*w + 6.25*h - 5*a - 161;
+}
+
+/* Keytel et al. (2005) — Predição do gasto calórico por FC
+   Validada por calorimetria indireta em adultos (n=100+)
+   Homens: EE/min = (−55.0969 + 0.6309×HR + 0.1988×W + 0.2017×Age) / 4.184
+   Mulheres:EE/min = (−20.4022 + 0.4472×HR − 0.1263×W + 0.0740×Age) / 4.184 */
+function keytelEE(bpm, w, a, dur) {
+  const epm = sex === 'M'
+    ? (-55.0969 + 0.6309*bpm + 0.1988*w + 0.2017*a) / 4.184
+    : (-20.4022 + 0.4472*bpm - 0.1263*w + 0.0740*a) / 4.184;
+  return Math.max(0, epm) * dur;
+}
+
+/* MET — Compendium 2024 (Ainsworth et al.)
+   EE (kcal) = MET × 3.5 × Peso(kg) / 200 × tempo(min)            */
+function metEE(met, w, dur) {
+  return (met * 3.5 * w / 200) * dur;
+}
+
+/* FCmax — Tanaka et al. (2001): 208 − 0.7×idade
+   Mais precisa que 220−idade (validada em adultos de 18–81 anos)   */
+function maxHR(a) { return 208 - 0.7 * a; }
+
+/* Zonas cardíacas (% FCmax — modelo de 5 zonas, ACSM guidelines)  */
+function hrZone(bpm, a) {
+  const pct = (bpm / maxHR(a)) * 100;
+  if (pct < 50) return 'Repouso';
+  if (pct < 60) return 'Zona 1 — Recuperação';
+  if (pct < 70) return 'Zona 2 — Base Aeróbica';
+  if (pct < 80) return 'Zona 3 — Aeróbico';
+  if (pct < 90) return 'Zona 4 — Limiar Anaeróbico';
+  if (pct < 96) return 'Zona 5 — VO₂ Máx';
+  return 'Zona 5+ — Máxima';
+}
+
+/* EPOC — Laforgia et al. (2006), Scott (2011), Bahr & Sejersted (1991)
+   Resistência intensa:  +10–15% (componente lento prolongado)
+   Resistência moderada: +6–10%
+   HIIT/Misto intenso:  +8–15%
+   Aeróbico moderado:   +2–5%                                       */
+function epocFactor(type, hrPct, resistVol) {
+  if (type === 'resistance') {
+    // Bahr & Sejersted (1991): EPOC em musculação escala com volume
+    const baseEpoc = hrPct > 0.80 ? 0.13 : 0.08;
+    // volume extra bonus: cada 10000 kg·rep acima de 5000 adiciona 1%
+    const volBonus = resistVol ? Math.min(0.05, (resistVol - 5000) / 100000) : 0;
+    return baseEpoc + Math.max(0, volBonus);
+  }
+  if (type === 'mixed') return hrPct > 0.85 ? 0.13 : hrPct > 0.75 ? 0.09 : 0.07;
+  return hrPct > 0.85 ? 0.06 : 0.03; // aerobic
+}
+
+/* Custo energético da locomoção — ACSM metabolic equations         */
+function distanceCal(key, w, dist) {
+  if (!dist) return null;
+  let f = 0.72;
+  if (/run|sprint|trail|jog/.test(key)) f = 1.02;
+  else if (/walk|hike/.test(key))       f = 0.55;
+  else if (/bike|cycling|mtb/.test(key)) f = 0.40;
+  else if (/ski|cross_country/.test(key)) f = 0.70;
+  return dist * w * f;
+}
+
+/* Modelo de Epley para 1RM e custo calórico por repetição
+   1RM = carga × (1 + reps/30)   [Epley 1985]
+   EE por série = (carga × reps × 0.1) / 4.184 kcal
+   + overhead metabólico de estabilização: +15%                     */
+function resistanceRepCal(sets, reps, load) {
+  if (!sets || !reps || !load) return { cal: 0, oneRM: null, volume: 0 };
+  const oneRM = load * (1 + reps / 30);
+  // custo mecânico: ~0.1 kJ por kg·rep (Haff & Triplett, NSCA 2016)
+  const mechKJ = load * reps * sets * 0.1;
+  const mechKcal = mechKJ / 4.184;
+  // +15% overhead de estabilização neuromuscular
+  const cal = mechKcal * 1.15;
+  const volume = load * reps * sets;
+  return { cal, oneRM, volume };
+}
+
+/* Wattagem → kcal
+   kcal = W × tempo(s) × 0.2389 / eficiência                       */
+function wattsCal(watts, durMin, efficiency) {
+  if (!watts) return 0;
+  return (watts * durMin * 60 * 0.2389) / efficiency;
+}
+
+
+function setExercisePickerOpen(open) {
+  const picker = document.getElementById('exercise-picker-panel');
+  const btn = document.getElementById('exercise-toggle');
+  if (!picker || !btn) return;
+
+  picker.hidden = !open;
+  btn.classList.toggle('open', open);
+  btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+
+  const label = btn.querySelector('.exercise-toggle-text');
+  if (label) label.textContent = open ? 'Ocultar lista de exercícios' : 'Abrir lista completa de exercícios';
+
+  if (open) {
+    setTimeout(() => document.getElementById('exercise-search')?.focus(), 60);
+  }
+}
+
+function toggleExercisePicker() {
+  const picker = document.getElementById('exercise-picker-panel');
+  setExercisePickerOpen(!!picker?.hidden);
+}
+
+function selectExercise(value) {
+  const select = document.getElementById('exercise');
+  const search = document.getElementById('exercise-search');
+  if (!select) return;
+  select.value = value;
+  if (search) search.value = '';
+  filterExercises();
+  onExerciseChange();
+  setExercisePickerOpen(false);
+}
+
+
+function getFieldWrapper(id) {
+  const el = document.getElementById(id);
+  return el ? el.closest('.field') : null;
+}
+
+function clearFieldAlert(id) {
+  const field = getFieldWrapper(id);
+  if (!field) return;
+  field.classList.remove('missing-field', 'shake-field');
+}
+
+function clearAllFieldAlerts() {
+  ['weight', 'height', 'age', 'exercise', 'duration', 'bpm', 'bf'].forEach(clearFieldAlert);
+}
+
+function shakeMissingFields(ids) {
+  const uniqueIds = [...new Set(ids)].filter(Boolean);
+  if (!uniqueIds.length) return;
+
+  uniqueIds.forEach((id) => {
+    const field = getFieldWrapper(id);
+    if (!field) return;
+    field.classList.remove('shake-field');
+    void field.offsetWidth;
+    field.classList.add('missing-field', 'shake-field');
+  });
+
+  const firstId = uniqueIds[0];
+  const firstField = getFieldWrapper(firstId);
+  if (firstField) {
+    firstField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  setTimeout(() => {
+    uniqueIds.forEach((id) => getFieldWrapper(id)?.classList.remove('shake-field'));
+  }, 520);
+}
+
+function clearAlertWhenFilled(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  if (String(el.value || '').trim() !== '') clearFieldAlert(id);
+}
+
+function updateExerciseSummary() {
+  const card = document.getElementById('selected-exercise-card');
+  const icon = document.getElementById('selected-exercise-icon');
+  const name = document.getElementById('selected-exercise-name');
+  const key = document.getElementById('exercise')?.value;
+  const ex = EX[key];
+  if (!card || !icon || !name) return;
+  card.classList.toggle('show', !!ex);
+  if (ex) {
+    icon.textContent = ex.i || '✓';
+    name.textContent = ex.n;
+  }
+}
+
+function updateFormProgress() {
+  const required = ['weight', 'height', 'age', 'exercise', 'duration', 'bpm'];
+  const filled = required.filter((id) => {
+    const el = document.getElementById(id);
+    return el && String(el.value || '').trim() !== '';
+  }).length;
+  const pct = Math.round((filled / required.length) * 100);
+  const fill = document.getElementById('form-progress-fill');
+  const text = document.getElementById('form-progress-text');
+  if (fill) fill.style.width = pct + '%';
+  if (text) text.textContent = `${filled}/${required.length} preenchidos`;
+}
+
+function enhanceFormUX() {
+  ['weight', 'height', 'age', 'duration', 'bpm', 'bf', 'speed', 'distance', 'rp-sets', 'rp-reps', 'rp-load', 'cp-watts'].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.addEventListener('input', updateFormProgress);
+      el.addEventListener('input', () => clearAlertWhenFilled(id));
+    }
+  });
+  const exercise = document.getElementById('exercise');
+  if (exercise) {
+    exercise.addEventListener('change', updateFormProgress);
+    exercise.addEventListener('change', () => clearAlertWhenFilled('exercise'));
+  }
+  updateExerciseSummary();
+  updateFormProgress();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UI
+// ═══════════════════════════════════════════════════════════════
+function normalizeSearchText(text) {
+  return String(text || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function buildExercisePicker() {
+  const select = document.getElementById('exercise');
+  const list = document.getElementById('exercise-list');
+  if (!select || !list) return;
+
+  list.innerHTML = '';
+
+  select.querySelectorAll('optgroup').forEach((group) => {
+    const groupEl = document.createElement('div');
+    groupEl.className = 'exercise-group';
+    groupEl.dataset.group = group.label;
+
+    const title = document.createElement('div');
+    title.className = 'exercise-group-title';
+    title.textContent = group.label;
+    groupEl.appendChild(title);
+
+    const optionsEl = document.createElement('div');
+    optionsEl.className = 'exercise-options';
+
+    group.querySelectorAll('option').forEach((option) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'exercise-option';
+      button.dataset.value = option.value;
+      button.dataset.search = `${group.label} ${option.textContent} ${option.value} ${option.dataset.search || ''}`;
+      button.textContent = option.textContent;
+      button.addEventListener('click', () => {
+        select.value = option.value;
+        onExerciseChange();
+        setExercisePickerOpen(false);
+      });
+      optionsEl.appendChild(button);
+    });
+
+    groupEl.appendChild(optionsEl);
+    list.appendChild(groupEl);
+  });
+
+  filterExercises();
+  updateExercisePickerSelection();
+  setExercisePickerOpen(false);
+}
+
+function updateExercisePickerSelection() {
+  const select = document.getElementById('exercise');
+  document.querySelectorAll('.exercise-option').forEach((button) => {
+    const isActive = button.dataset.value === select.value;
+    button.classList.toggle('active', isActive);
+    button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+  });
+}
+
+function filterExercises() {
+  const select = document.getElementById('exercise');
+  const search = normalizeSearchText(document.getElementById('exercise-search').value);
+  const empty = document.getElementById('exercise-empty');
+  let visibleCount = 0;
+
+  select.querySelectorAll('optgroup').forEach((group) => {
+    const groupText = normalizeSearchText(group.label);
+    let groupHasMatch = false;
+
+    group.querySelectorAll('option').forEach((option) => {
+      const optionText = normalizeSearchText(`${group.label} ${option.textContent} ${option.value} ${option.dataset.search || ''}`);
+      const match = !search || groupText.includes(search) || optionText.includes(search);
+      option.hidden = !match;
+      option.disabled = !match;
+      groupHasMatch = groupHasMatch || match;
+      if (match) visibleCount += 1;
+    });
+
+    group.hidden = !groupHasMatch;
+  });
+
+  document.querySelectorAll('.exercise-group').forEach((groupEl) => {
+    const groupText = normalizeSearchText(groupEl.dataset.group);
+    let groupHasMatch = false;
+
+    groupEl.querySelectorAll('.exercise-option').forEach((button) => {
+      const match = !search || groupText.includes(search) || normalizeSearchText(button.dataset.search).includes(search);
+      button.classList.toggle('hidden', !match);
+      groupHasMatch = groupHasMatch || match;
+    });
+
+    groupEl.classList.toggle('hidden', !groupHasMatch);
+  });
+
+  const placeholder = select.querySelector('option[value=""]');
+  if (placeholder) {
+    placeholder.hidden = false;
+    placeholder.disabled = false;
+  }
+
+  empty.classList.toggle('show', !!search && visibleCount === 0);
+}
+
+function onExerciseChange() {
+  const k = document.getElementById('exercise').value;
+  const ex = EX[k];
+  updateExercisePickerSelection();
+  updateExerciseSummary();
+  updateFormProgress();
+  if (k) clearFieldAlert('exercise');
+  showCond('field-speed', ex && ex.s);
+  showCond('field-distance', ex && ex.d);
+
+  const rPanel = document.getElementById('resistance-panel');
+  const cPanel = document.getElementById('cardio-panel');
+
+  if (ex && ex.resist) {
+    rPanel.classList.add('show');
+  } else {
+    rPanel.classList.remove('show');
+  }
+
+  if (ex && ex.cardio) {
+    cPanel.classList.add('show');
+  } else {
+    cPanel.classList.remove('show');
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('error-msg');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 6000);
+}
+
+function calculate() {
+  const w   = parseFloat(document.getElementById('weight').value);
+  const h   = parseFloat(document.getElementById('height').value);
+  const a   = parseFloat(document.getElementById('age').value);
+  const bpm = parseFloat(document.getElementById('bpm').value);
+  const dur = parseFloat(document.getElementById('duration').value);
+  const key = document.getElementById('exercise').value;
+  const spd = parseFloat(document.getElementById('speed').value) || null;
+  const dst = parseFloat(document.getElementById('distance').value) || null;
+  const bfOn= document.getElementById('bf-toggle').checked;
+  const bf  = bfOn ? parseFloat(document.getElementById('bf').value) : null;
+
+  // Musculação (opcional)
+  const rpSets = parseFloat(document.getElementById('rp-sets').value) || null;
+  const rpReps = parseFloat(document.getElementById('rp-reps').value) || null;
+  const rpLoad = parseFloat(document.getElementById('rp-load').value) || null;
+
+  // Cardio / wattagem (opcional)
+  const cpWatts = parseFloat(document.getElementById('cp-watts').value) || null;
+  const cpEff   = parseFloat(document.getElementById('cp-efficiency').value);
+
+  const missingFields = [];
+  if (!w) missingFields.push('weight');
+  if (!h) missingFields.push('height');
+  if (!a) missingFields.push('age');
+  if (!key) missingFields.push('exercise');
+  if (!dur) missingFields.push('duration');
+  if (!bpm) missingFields.push('bpm');
+
+  if (missingFields.length) {
+    showError('Preencha todos os campos obrigatórios (*).');
+    shakeMissingFields(missingFields);
+    return;
+  }
+
+  const mhr = maxHR(a);
+  if (bpm > mhr * 1.06) {
+    showError(`BPM ${bpm} está acima do máximo teórico para ${a} anos (~${Math.round(mhr)} bpm — Tanaka et al.). Verifique.`);
+    shakeMissingFields(['bpm']);
+    return;
+  }
+  if (bfOn && (!bf || bf < 3 || bf > 60)) {
+    showError('Informe um % de gordura válido (3–60%).');
+    shakeMissingFields(['bf']);
+    return;
+  }
+  clearAllFieldAlerts();
+
+  const ex = EX[key];
+  const hrPct = bpm / mhr;
+  const bmr   = calcBMR(w, h, a, bf);
+
+  // ── Cálculos base ──
+  // Keytel e MET estimam gasto bruto no período. Para mostrar apenas
+  // o gasto ativo do exercício, descontamos o repouso daquele tempo.
+  const bmrCal  = bmr / 1440 * dur;
+  const hrGross = keytelEE(bpm, w, a, dur);
+  const metGross = metEE(ex.met, w, dur);
+  const hrCal   = Math.max(0, hrGross - bmrCal);
+  const mCal    = Math.max(0, metGross - bmrCal);
+
+  // ── Musculação: custo por repetição (se preenchido) ──
+  const { cal: repCal, oneRM, volume: resistVol } = resistanceRepCal(rpSets, rpReps, rpLoad);
+
+  // ── Cardio: wattagem (se preenchida) ──
+  const wCal = ex.cardio ? wattsCal(cpWatts, dur, cpEff) : 0;
+
+  // ── Blend final ──
+  let blend;
+  if (wCal > 0) {
+    // Se temos wattagem, ela é o método mais preciso → peso alto
+    blend = wCal * 0.7 + hrCal * ex.w * 0.2 + mCal * (1 - ex.w) * 0.1;
+  } else if (repCal > 0 && ex.resist) {
+    // Musculação com reps: blend entre custo por rep e Keytel+MET
+    const baseBlend = hrCal * ex.w + mCal * (1 - ex.w);
+    blend = repCal * 0.55 + baseBlend * 0.45;
+  } else {
+    blend = hrCal * ex.w + mCal * (1 - ex.w);
+  }
+
+  const actCal  = blend;
+  const epoc    = 0;
+  const epocCal = 0;
+
+  const dCal    = distanceCal(key, w, dst);
+  let final     = dCal ? Math.max(actCal, dCal * 0.9) : actCal;
+  final = Math.max(1, Math.round(final));
+  const lo = Math.round(final * 0.88), hi = Math.round(final * 1.12);
+
+  // ── Auxiliares ──
+  const imc = (w / Math.pow(h/100, 2)).toFixed(1);
+  const lbmTxt = bf ? (w*(1-bf/100)).toFixed(1)+' kg' : null;
+  const zone = hrZone(bpm, a);
+  const cpm = final / dur;
+  let intName, intPct;
+  if      (cpm < 3.5)  { intName='Muito Leve';    intPct=12; }
+  else if (cpm < 6)    { intName='Leve';           intPct=28; }
+  else if (cpm < 9)    { intName='Moderada';       intPct=48; }
+  else if (cpm < 13)   { intName='Intensa';        intPct=68; }
+  else if (cpm < 17)   { intName='Muito Intensa';  intPct=84; }
+  else                 { intName='Extrema';         intPct=98; }
+
+  // ── Breakdown visual ──
+  const actPct  = 100;
+  const epocPct = 0;
+  const bmrPct  = 0;
+
+  // ── Preenche DOM ──
+  document.getElementById('res-icon').textContent = ex.i;
+  document.getElementById('res-name').textContent = ex.n;
+  document.getElementById('res-sub').textContent  = `${dur} min · ${bpm} bpm · ${w} kg · ${a} anos · ${sex==='M'?'Masculino':'Feminino'}`;
+  document.getElementById('res-cal').textContent  = final.toLocaleString('pt-BR');
+  document.getElementById('res-range').textContent = `Intervalo ±12%: ${lo.toLocaleString('pt-BR')} – ${hi.toLocaleString('pt-BR')} kcal`;
+  document.getElementById('res-permin').textContent = cpm.toFixed(1);
+  document.getElementById('res-duration').textContent = `${dur} min`;
+  document.getElementById('res-imc').textContent = imc;
+  document.getElementById('res-zone').textContent = zone;
+  document.getElementById('res-intname').textContent = intName;
+
+  // Breakdown
+  setTimeout(() => {
+    document.getElementById('bb-activity').style.width = actPct  + '%';
+    document.getElementById('bb-epoc').style.width     = epocPct + '%';
+    document.getElementById('bb-bmr').style.width      = bmrPct  + '%';
+  }, 120);
+  document.getElementById('bl-activity-txt').textContent = `Exercício ${Math.round(actCal)} kcal`;
+  document.getElementById('bl-epoc-txt').textContent     = 'EPOC não incluído';
+  document.getElementById('bl-bmr-txt').textContent      = `Repouso descontado ${Math.round(bmrCal)} kcal`;
+
+  const show = (id, val, txt) => {
+    const el = document.getElementById(id);
+    el.style.display = val ? 'block' : 'none';
+    if (val && txt) document.getElementById(txt).textContent = val;
+  };
+  show('sb-speed',  spd && ex.s ? spd+' km/h'              : null, 'res-speed');
+  show('sb-dist',   dst && ex.d ? dst+' km'                : null, 'res-dist');
+  show('sb-lbm',    lbmTxt,                                         'res-lbm');
+  show('sb-1rm',    oneRM ? Math.round(oneRM)+' kg'         : null, 'res-1rm');
+  show('sb-volume', resistVol ? Math.round(resistVol)+' kg' : null, 'res-volume');
+  show('sb-watts',  wCal > 0 ? cpWatts+' W'                : null, 'res-watts');
+
+  // Metodologia
+  let metodStr = '';
+  const bmrLabel = bf ? 'Katch-McArdle (massa magra)' : 'Mifflin-St Jeor';
+  metodStr += `<strong>Resultado:</strong> gasto ativo durante o exercício, sem EPOC e sem repouso · `;
+  metodStr += `<strong>Repouso descontado:</strong> ${bmrLabel} · `;
+  metodStr += `<strong>FC:</strong> Keytel et al. (2005) · `;
+  metodStr += `<strong>MET:</strong> Compendium 2024 (Ainsworth) · `;
+  if (wCal > 0) metodStr += `<strong>Wattagem:</strong> potência mecânica (${Math.round(cpEff*100)}% efic.) · `;
+  if (repCal > 0 && ex.resist) metodStr += `<strong>Custo/rep:</strong> Haff & Triplett (NSCA 2016) + Epley 1RM · `;
+  metodStr += `<strong>Blend:</strong> ${wCal > 0 ? 'Watts 70% + FC 20% + MET 10%' : repCal > 0 && ex.resist ? 'Rep-model 55% + Keytel+MET 45%' : `${Math.round(ex.w*100)}% Keytel / ${Math.round((1-ex.w)*100)}% MET`} · `;
+  metodStr += `<strong>FCmax:</strong> Tanaka et al. (2001)`;
+  document.getElementById('res-method').innerHTML = metodStr;
+
+  const res = document.getElementById('result');
+  res.classList.add('show');
+  setTimeout(() => { document.getElementById('res-bar').style.width = intPct + '%'; }, 120);
+  res.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+initTheme();
+buildExercisePicker();
+enhanceFormUX();
+</script>
+</body>
+</html>
